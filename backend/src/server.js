@@ -86,7 +86,7 @@ app.get('/health', (_req, res) => {
     ok: true,
     service: 'clearpath',
     mode: MOCK_MODE ? 'mock' : 'live',
-    model: MOCK_MODE ? 'mock' : process.env.CLEARPATH_MODEL || 'claude-sonnet-4-6',
+    model: MOCK_MODE ? 'mock' : process.env.CLEARPATH_MODEL || 'claude-haiku-4-5',
     logging: loggingEnabled(),
     time: new Date().toISOString(),
   });
@@ -110,6 +110,15 @@ function parseBase64Payload(input) {
   const match = input.match(/^data:([^;,]+)?(?:;[^,]*)*,([\s\S]*)$/);
   if (match) return { data: match[2].trim(), mediaType: match[1] || null };
   return { data: input.trim(), mediaType: null };
+}
+
+/** True if this raw base64 decodes to bytes starting with the %PDF magic number. */
+function looksLikePdf(base64) {
+  try {
+    return Buffer.from(base64.slice(0, 12), 'base64').subarray(0, 4).toString('latin1') === '%PDF';
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -143,9 +152,18 @@ app.post('/analyze', demoLimiter, analyzeLimiter, async (req, res) => {
     let documentText = typeof text === 'string' ? text : '';
     let documentImage = null;
 
-    if (pdfBase64) {
-      inputMethod = inputMethod || 'pdf';
-      const { data: pdfData } = parseBase64Payload(pdfBase64);
+    // A PDF can arrive as pdfBase64, OR mislabeled as an image — mobile file
+    // pickers frequently hand over a PDF with an empty/octet-stream MIME type,
+    // which lands in the `image` field. Sniff the magic bytes so either path works.
+    let pdfData = pdfBase64 ? parseBase64Payload(pdfBase64).data : null;
+    let imgData = image ? parseBase64Payload(image).data : null;
+    if (!pdfData && imgData && looksLikePdf(imgData)) {
+      pdfData = imgData;
+      imgData = null;
+    }
+
+    if (pdfData) {
+      inputMethod = 'pdf';
       try {
         documentText = await extractPdfText(pdfData);
       } catch {
@@ -162,9 +180,8 @@ app.post('/analyze', demoLimiter, analyzeLimiter, async (req, res) => {
             'That PDF did not contain readable text (it may be a scan). Try taking a photo instead.',
         });
       }
-    } else if (image) {
+    } else if (imgData) {
       inputMethod = inputMethod || 'camera';
-      const { data: imgData } = parseBase64Payload(image);
       // MEASURE 1: validate it is a real jpeg/png/webp under 10 MB.
       const v = validateImage(imgData);
       if (!v.ok) {

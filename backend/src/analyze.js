@@ -3,10 +3,11 @@ import { SYSTEM_PROMPT, locationHint, languageInstructions } from './systemPromp
 import { pickMock } from './mockData.js';
 
 /**
- * The plan deliberately selects claude-sonnet-4-6 (reliable structured JSON,
- * fast, free-tier friendly). Override with CLEARPATH_MODEL if you want to swap.
+ * claude-haiku-4-5 — fastest + lowest cost, reliable structured JSON. Chosen for
+ * snappy demos and cheap per-call pricing. Override with CLEARPATH_MODEL to swap
+ * (e.g. claude-sonnet-4-6 for harder documents).
  */
-const MODEL = process.env.CLEARPATH_MODEL || 'claude-sonnet-4-6';
+const MODEL = process.env.CLEARPATH_MODEL || 'claude-haiku-4-5';
 const MAX_TOKENS = 2000;
 
 const hasKey = Boolean(process.env.ANTHROPIC_API_KEY);

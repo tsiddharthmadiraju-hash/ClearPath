@@ -449,7 +449,14 @@ async function handleFile(file) {
   if (!file) return;
   try {
     const base64 = await fileToBase64(file);
-    if (file.type === 'application/pdf') analyze({ pdfBase64: base64, inputMethod: 'pdf' });
+    // Detect PDFs by MIME type, file extension, OR base64 magic bytes (%PDF →
+    // "JVBER"). Mobile pickers often give a PDF an empty/octet-stream type, so
+    // type alone is not enough — without this they'd be sent as a broken image.
+    const isPdf =
+      file.type === 'application/pdf' ||
+      /\.pdf$/i.test(file.name || '') ||
+      /^JVBER/.test(base64);
+    if (isPdf) analyze({ pdfBase64: base64, inputMethod: 'pdf' });
     else analyze({ image: base64, mediaType: file.type || 'image/jpeg', inputMethod: 'camera' });
   } catch {
     showError(null);
