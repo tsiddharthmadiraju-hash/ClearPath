@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "ClearPath",
+    "slug": "clearpath",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "clearpath",
+    "splash": {
+      "backgroundColor": "#1d4ed8",
+      "resizeMode": "contain"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "ClearPath uses your camera to photograph a document so it can be explained in plain language.",
+        "NSPhotoLibraryUsageDescription": "ClearPath uses your photo library to select a document image to explain."
+      }
+    },
+    "android": {
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "ClearPath uses your photos to select a document image to explain.",
+          "cameraPermission": "ClearPath uses your camera to photograph a document so it can be explained."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "ClearPath uses your camera to photograph a document so it can be explained in plain language."
+        }
+      ],
+      "expo-asset",
+      "expo-localization"
+    ],
+    "extra": {
+      "apiBaseUrl": "http://localhost:4000"
+    }
+  }
+}

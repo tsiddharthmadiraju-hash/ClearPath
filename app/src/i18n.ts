@@ -1,0 +1,411 @@
+import { useSyncExternalStore } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Localization from 'expo-localization';
+
+export interface Lang {
+  code: string;
+  native: string;
+  english: string;
+  rtl: boolean;
+  font: string | null;
+}
+
+export const LANGUAGES: Lang[] = [
+  { code: 'en', native: 'English', english: 'English', rtl: false, font: null },
+  { code: 'es', native: 'Español', english: 'Spanish', rtl: false, font: null },
+  { code: 'zh-Hans', native: '中文简体', english: 'Chinese Simplified', rtl: false, font: 'Noto Sans SC' },
+  { code: 'zh-Hant', native: '中文繁體', english: 'Chinese Traditional', rtl: false, font: 'Noto Sans TC' },
+  { code: 'vi', native: 'Tiếng Việt', english: 'Vietnamese', rtl: false, font: null },
+  { code: 'tl', native: 'Tagalog', english: 'Tagalog', rtl: false, font: null },
+  { code: 'ar', native: 'العربية', english: 'Arabic', rtl: true, font: 'Noto Sans Arabic' },
+  { code: 'fr', native: 'Français', english: 'French', rtl: false, font: null },
+  { code: 'ko', native: '한국어', english: 'Korean', rtl: false, font: 'Noto Sans KR' },
+  { code: 'ru', native: 'Русский', english: 'Russian', rtl: false, font: null },
+  { code: 'ht', native: 'Kreyòl Ayisyen', english: 'Haitian Creole', rtl: false, font: null },
+  { code: 'pt', native: 'Português', english: 'Portuguese', rtl: false, font: null },
+  { code: 'hi', native: 'हिन्दी', english: 'Hindi', rtl: false, font: 'Noto Sans Devanagari' },
+  { code: 'so', native: 'Soomaali', english: 'Somali', rtl: false, font: null },
+  { code: 'am', native: 'አማርኛ', english: 'Amharic', rtl: false, font: 'Noto Sans Ethiopic' },
+];
+
+const BYCODE: Record<string, Lang> = Object.fromEntries(LANGUAGES.map((l) => [l.code, l]));
+
+type Dict = Record<string, string>;
+export const STRINGS: Record<string, Dict> = {
+  en: {
+    home_headline: "Received a letter you don't understand?", home_subtitle: 'ClearPath reads it and tells you exactly what to do.', how_start: 'How would you like to start?',
+    take_photo: 'Take a Photo', take_photo_sub: 'Point your camera at the document', upload_doc: 'Upload a Document', upload_doc_sub: 'Choose a PDF from your files',
+    paste_text: 'Type or Paste Text', paste_text_sub: 'Copy and paste the document text', try_example: 'Try an example',
+    processing_status: 'Analyzing your document', processing_title: 'Reading your document…',
+    what_this_means: 'What this means', what_to_do: 'What you need to do', who_can_help: 'Who can help you',
+    talk_to_person: 'Talk to a real person', free_available: 'Free • Available 24 hours a day • No account needed', get_human_help: 'Get human help', services_free: 'These services are free and confidential.',
+    immediate: 'Immediate', this_week: 'This Week', no_deadline: 'No Deadline', confident: 'Confident', review_recommended: 'Review recommended', verify_expert: 'Verify with an expert',
+    what_to_say: 'What to say when you call', nav_home: 'Home', nav_history: 'History', nav_help: 'Help',
+    disclaimer: 'ClearPath explains documents to help you understand your situation. It does not provide legal advice.', no_data_stored: 'Your documents are never stored', choose_language: 'Choose your language',
+    cannot_legal_advice: 'ClearPath cannot give legal advice. These organizations can.', paste_title: 'Paste your document', explain_btn: 'Explain this document',
+    textarea_ph: 'Paste the text of your letter or notice here…', city_ph: 'Your city (optional — for local resources)',
+    history_title: 'Nothing saved here', history_body: 'ClearPath never stores your documents. Your history stays private and disappears when you leave.',
+    help_title: 'Need to talk to someone?', help_body: 'Real, free, confidential help is one tap away — no account needed.',
+    detected_tpl: 'We detected your device is set to {lang}. Using {lang} — tap to change.',
+    chip_eviction: 'Eviction Notice', chip_benefits: 'Benefits Letter', chip_discharge: 'Hospital Discharge', chip_school: 'School Notice', chip_utility: 'Utility Shutoff',
+  },
+  es: {
+    home_headline: '¿Recibió una carta confusa?', home_subtitle: 'Le diremos exactamente lo que significa.', how_start: '¿Cómo desea comenzar?',
+    take_photo: 'Tomar una foto', take_photo_sub: 'Apunte la cámara al documento', upload_doc: 'Subir un documento', upload_doc_sub: 'Elija un PDF de sus archivos',
+    paste_text: 'Escribir o pegar texto', paste_text_sub: 'Copie y pegue el texto del documento', try_example: 'Pruebe un ejemplo',
+    processing_status: 'Analizando su documento', processing_title: 'Leyendo su documento…',
+    what_this_means: 'Qué significa esto', what_to_do: 'Lo que debe hacer', who_can_help: 'Quién puede ayudarle',
+    talk_to_person: 'Hablar con una persona real', free_available: 'Gratis • Disponible las 24 horas • Sin necesidad de cuenta', get_human_help: 'Obtener ayuda humana', services_free: 'Estos servicios son gratuitos y confidenciales.',
+    immediate: 'Inmediato', this_week: 'Esta semana', no_deadline: 'Sin fecha límite', confident: 'Seguro', review_recommended: 'Se recomienda revisar', verify_expert: 'Verifique con un experto',
+    what_to_say: 'Qué decir cuando llame', nav_home: 'Inicio', nav_history: 'Historial', nav_help: 'Ayuda',
+    disclaimer: 'ClearPath explica documentos para ayudarle a entender su situación. No brinda asesoría legal.', no_data_stored: 'Sus documentos nunca se guardan', choose_language: 'Elija su idioma',
+    cannot_legal_advice: 'ClearPath no puede dar asesoría legal. Estas organizaciones sí pueden.', paste_title: 'Pegue su documento', explain_btn: 'Explicar este documento',
+    textarea_ph: 'Pegue aquí el texto de su carta o aviso…', city_ph: 'Su ciudad (opcional — para recursos locales)',
+    history_title: 'Nada guardado aquí', history_body: 'ClearPath nunca guarda sus documentos. Su historial es privado y desaparece cuando se va.',
+    help_title: '¿Necesita hablar con alguien?', help_body: 'Ayuda real, gratuita y confidencial a un toque — sin necesidad de cuenta.',
+    detected_tpl: 'Detectamos que su dispositivo está configurado en {lang}. Usando {lang} — toque para cambiar.',
+    chip_eviction: 'Aviso de desalojo', chip_benefits: 'Carta de beneficios', chip_discharge: 'Alta del hospital', chip_school: 'Aviso escolar', chip_utility: 'Corte de servicios',
+  },
+  'zh-Hans': {
+    home_headline: '收到看不懂的信件？', home_subtitle: '我们会告诉您它的确切含义。', how_start: '您想如何开始？',
+    take_photo: '拍照', take_photo_sub: '将相机对准文件', upload_doc: '上传文件', upload_doc_sub: '从文件中选择 PDF',
+    paste_text: '输入或粘贴文本', paste_text_sub: '复制并粘贴文件文本', try_example: '试试示例',
+    processing_status: '正在分析您的文件', processing_title: '正在读取您的文件…',
+    what_this_means: '这是什么意思', what_to_do: '您需要做什么', who_can_help: '谁可以帮助您',
+    talk_to_person: '与真人交谈', free_available: '免费 • 全天 24 小时 • 无需账户', get_human_help: '获取人工帮助', services_free: '这些服务是免费且保密的。',
+    immediate: '立即', this_week: '本周', no_deadline: '无截止日期', confident: '确信', review_recommended: '建议复核', verify_expert: '请向专家核实',
+    what_to_say: '致电时该说什么', nav_home: '主页', nav_history: '历史', nav_help: '帮助',
+    disclaimer: 'ClearPath 解释文件以帮助您了解自己的情况。它不提供法律建议。', no_data_stored: '我们绝不保存您的文件', choose_language: '选择您的语言',
+    cannot_legal_advice: 'ClearPath 无法提供法律建议。这些机构可以。', paste_title: '粘贴您的文件', explain_btn: '解释这份文件',
+    textarea_ph: '在此粘贴您的信件或通知文本…', city_ph: '您的城市（可选 — 用于本地资源）',
+    history_title: '这里没有保存任何内容', history_body: 'ClearPath 绝不保存您的文件。您的历史记录是私密的，离开时即消失。',
+    help_title: '需要和人谈谈吗？', help_body: '真实、免费、保密的帮助，一触即达 — 无需账户。',
+    detected_tpl: '我们检测到您的设备语言为 {lang}。正在使用 {lang} — 点击可更改。',
+    chip_eviction: '驱逐通知', chip_benefits: '福利信函', chip_discharge: '出院说明', chip_school: '学校通知', chip_utility: '停水电通知',
+  },
+  'zh-Hant': {
+    home_headline: '收到看不懂的信件？', home_subtitle: '我們會告訴您它的確切含義。', how_start: '您想如何開始？',
+    take_photo: '拍照', take_photo_sub: '將相機對準文件', upload_doc: '上傳文件', upload_doc_sub: '從檔案中選擇 PDF',
+    paste_text: '輸入或貼上文字', paste_text_sub: '複製並貼上文件文字', try_example: '試試範例',
+    processing_status: '正在分析您的文件', processing_title: '正在讀取您的文件…',
+    what_this_means: '這是什麼意思', what_to_do: '您需要做什麼', who_can_help: '誰可以幫助您',
+    talk_to_person: '與真人交談', free_available: '免費 • 全天 24 小時 • 無需帳戶', get_human_help: '獲取人工協助', services_free: '這些服務是免費且保密的。',
+    immediate: '立即', this_week: '本週', no_deadline: '無截止日期', confident: '確信', review_recommended: '建議覆核', verify_expert: '請向專家核實',
+    what_to_say: '致電時該說什麼', nav_home: '主頁', nav_history: '歷史', nav_help: '說明',
+    disclaimer: 'ClearPath 解釋文件以協助您了解自己的情況。它不提供法律建議。', no_data_stored: '我們絕不儲存您的文件', choose_language: '選擇您的語言',
+    cannot_legal_advice: 'ClearPath 無法提供法律建議。這些機構可以。', paste_title: '貼上您的文件', explain_btn: '解釋這份文件',
+    textarea_ph: '在此貼上您的信件或通知文字…', city_ph: '您的城市（可選 — 用於本地資源）',
+    history_title: '這裡沒有儲存任何內容', history_body: 'ClearPath 絕不儲存您的文件。您的歷史紀錄是私密的，離開時即消失。',
+    help_title: '需要和人談談嗎？', help_body: '真實、免費、保密的協助，一觸即達 — 無需帳戶。',
+    detected_tpl: '我們偵測到您的裝置語言為 {lang}。正在使用 {lang} — 點擊可更改。',
+    chip_eviction: '驅逐通知', chip_benefits: '福利信函', chip_discharge: '出院說明', chip_school: '學校通知', chip_utility: '停水電通知',
+  },
+  vi: {
+    home_headline: 'Nhận được một lá thư khó hiểu?', home_subtitle: 'Chúng tôi sẽ cho bạn biết chính xác nó có nghĩa là gì.', how_start: 'Bạn muốn bắt đầu như thế nào?',
+    take_photo: 'Chụp ảnh', take_photo_sub: 'Hướng máy ảnh vào tài liệu', upload_doc: 'Tải lên tài liệu', upload_doc_sub: 'Chọn một tệp PDF từ tệp của bạn',
+    paste_text: 'Nhập hoặc dán văn bản', paste_text_sub: 'Sao chép và dán nội dung tài liệu', try_example: 'Thử một ví dụ',
+    processing_status: 'Đang phân tích tài liệu của bạn', processing_title: 'Đang đọc tài liệu của bạn…',
+    what_this_means: 'Điều này có nghĩa là gì', what_to_do: 'Những việc bạn cần làm', who_can_help: 'Ai có thể giúp bạn',
+    talk_to_person: 'Nói chuyện với người thật', free_available: 'Miễn phí • Phục vụ 24 giờ • Không cần tài khoản', get_human_help: 'Nhận trợ giúp từ con người', services_free: 'Các dịch vụ này miễn phí và bảo mật.',
+    immediate: 'Ngay lập tức', this_week: 'Tuần này', no_deadline: 'Không có hạn chót', confident: 'Tự tin', review_recommended: 'Nên xem lại', verify_expert: 'Hãy xác minh với chuyên gia',
+    what_to_say: 'Nói gì khi bạn gọi', nav_home: 'Trang chủ', nav_history: 'Lịch sử', nav_help: 'Trợ giúp',
+    disclaimer: 'ClearPath giải thích tài liệu để giúp bạn hiểu tình huống của mình. Ứng dụng không cung cấp tư vấn pháp lý.', no_data_stored: 'Tài liệu của bạn không bao giờ được lưu trữ', choose_language: 'Chọn ngôn ngữ của bạn',
+    cannot_legal_advice: 'ClearPath không thể đưa ra tư vấn pháp lý. Các tổ chức này thì có thể.', paste_title: 'Dán tài liệu của bạn', explain_btn: 'Giải thích tài liệu này',
+    textarea_ph: 'Dán nội dung lá thư hoặc thông báo của bạn vào đây…', city_ph: 'Thành phố của bạn (tùy chọn — để tìm nguồn lực địa phương)',
+    history_title: 'Không có gì được lưu ở đây', history_body: 'ClearPath không bao giờ lưu trữ tài liệu của bạn. Lịch sử của bạn luôn riêng tư và biến mất khi bạn rời đi.',
+    help_title: 'Cần nói chuyện với ai đó?', help_body: 'Trợ giúp thật, miễn phí, bảo mật chỉ cách một chạm — không cần tài khoản.',
+    detected_tpl: 'Chúng tôi phát hiện thiết bị của bạn đang đặt ở {lang}. Đang dùng {lang} — chạm để thay đổi.',
+    chip_eviction: 'Thông báo trục xuất', chip_benefits: 'Thư trợ cấp', chip_discharge: 'Xuất viện', chip_school: 'Thông báo nhà trường', chip_utility: 'Cắt dịch vụ tiện ích',
+  },
+  tl: {
+    home_headline: 'May natanggap na nakakalitong sulat?', home_subtitle: 'Sasabihin namin sa iyo kung ano talaga ang ibig sabihin nito.', how_start: 'Paano mo gustong magsimula?',
+    take_photo: 'Kumuha ng Larawan', take_photo_sub: 'Itutok ang camera sa dokumento', upload_doc: 'Mag-upload ng Dokumento', upload_doc_sub: 'Pumili ng PDF mula sa iyong mga file',
+    paste_text: 'Mag-type o Mag-paste ng Teksto', paste_text_sub: 'Kopyahin at i-paste ang teksto ng dokumento', try_example: 'Sumubok ng halimbawa',
+    processing_status: 'Sinusuri ang iyong dokumento', processing_title: 'Binabasa ang iyong dokumento…',
+    what_this_means: 'Ano ang ibig sabihin nito', what_to_do: 'Ano ang kailangan mong gawin', who_can_help: 'Sino ang makakatulong sa iyo',
+    talk_to_person: 'Makipag-usap sa totoong tao', free_available: 'Libre • Bukas 24 oras • Walang kailangang account', get_human_help: 'Kumuha ng tulong mula sa tao', services_free: 'Ang mga serbisyong ito ay libre at kumpidensyal.',
+    immediate: 'Agaran', this_week: 'Ngayong Linggo', no_deadline: 'Walang Deadline', confident: 'Tiwala', review_recommended: 'Inirerekomendang suriin', verify_expert: 'Kumpirmahin sa eksperto',
+    what_to_say: 'Ano ang sasabihin kapag tumawag ka', nav_home: 'Home', nav_history: 'Kasaysayan', nav_help: 'Tulong',
+    disclaimer: 'Ipinapaliwanag ng ClearPath ang mga dokumento upang matulungan kang maunawaan ang iyong sitwasyon. Hindi ito nagbibigay ng legal na payo.', no_data_stored: 'Hindi kailanman iniimbak ang iyong mga dokumento', choose_language: 'Piliin ang iyong wika',
+    cannot_legal_advice: 'Hindi makakapagbigay ng legal na payo ang ClearPath. Ang mga organisasyong ito, kaya.', paste_title: 'I-paste ang iyong dokumento', explain_btn: 'Ipaliwanag ang dokumentong ito',
+    textarea_ph: 'I-paste dito ang teksto ng iyong sulat o abiso…', city_ph: 'Ang iyong lungsod (opsyonal — para sa lokal na tulong)',
+    history_title: 'Walang naka-save dito', history_body: 'Hindi kailanman iniimbak ng ClearPath ang iyong mga dokumento. Pribado ang iyong kasaysayan at nawawala kapag umalis ka.',
+    help_title: 'Kailangang may makausap?', help_body: 'Totoo, libre, at kumpidensyal na tulong sa isang pindot — walang kailangang account.',
+    detected_tpl: 'Natukoy naming naka-set ang iyong device sa {lang}. Ginagamit ang {lang} — pindutin para baguhin.',
+    chip_eviction: 'Abiso ng Pagpapaalis', chip_benefits: 'Sulat ng Benepisyo', chip_discharge: 'Paglabas sa Ospital', chip_school: 'Abiso ng Paaralan', chip_utility: 'Pagputol ng Utilidad',
+  },
+  ar: {
+    home_headline: 'هل وصلتك رسالة محيّرة؟', home_subtitle: 'سنخبرك بمعناها بالضبط.', how_start: 'كيف تريد أن تبدأ؟',
+    take_photo: 'التقاط صورة', take_photo_sub: 'وجّه الكاميرا نحو المستند', upload_doc: 'رفع مستند', upload_doc_sub: 'اختر ملف PDF من ملفاتك',
+    paste_text: 'كتابة أو لصق نص', paste_text_sub: 'انسخ نص المستند والصقه', try_example: 'جرّب مثالًا',
+    processing_status: 'جارٍ تحليل مستندك', processing_title: 'جارٍ قراءة مستندك…',
+    what_this_means: 'ماذا يعني هذا', what_to_do: 'ما الذي عليك فعله', who_can_help: 'من يمكنه مساعدتك',
+    talk_to_person: 'التحدث مع شخص حقيقي', free_available: 'مجاني • متاح 24 ساعة • بدون حساب', get_human_help: 'احصل على مساعدة بشرية', services_free: 'هذه الخدمات مجانية وسرية.',
+    immediate: 'فوري', this_week: 'هذا الأسبوع', no_deadline: 'بدون موعد نهائي', confident: 'واثق', review_recommended: 'يُنصح بالمراجعة', verify_expert: 'تحقق مع خبير',
+    what_to_say: 'ماذا تقول عند الاتصال', nav_home: 'الرئيسية', nav_history: 'السجل', nav_help: 'المساعدة',
+    disclaimer: 'يشرح ClearPath المستندات لمساعدتك على فهم وضعك. وهو لا يقدّم استشارة قانونية.', no_data_stored: 'لا يتم حفظ مستنداتك أبدًا', choose_language: 'اختر لغتك',
+    cannot_legal_advice: 'لا يستطيع ClearPath تقديم استشارة قانونية. هذه المنظمات تستطيع.', paste_title: 'الصق مستندك', explain_btn: 'اشرح هذا المستند',
+    textarea_ph: 'الصق هنا نص رسالتك أو إشعارك…', city_ph: 'مدينتك (اختياري — للموارد المحلية)',
+    history_title: 'لا شيء محفوظ هنا', history_body: 'لا يحفظ ClearPath مستنداتك أبدًا. يبقى سجلّك خاصًا ويختفي عند مغادرتك.',
+    help_title: 'هل تحتاج إلى التحدث مع أحد؟', help_body: 'مساعدة حقيقية ومجانية وسرية على بُعد لمسة — بدون حساب.',
+    detected_tpl: 'اكتشفنا أن جهازك مضبوط على {lang}. نستخدم {lang} — اضغط للتغيير.',
+    chip_eviction: 'إشعار إخلاء', chip_benefits: 'خطاب إعانات', chip_discharge: 'خروج من المستشفى', chip_school: 'إشعار مدرسي', chip_utility: 'قطع الخدمات',
+  },
+  fr: {
+    home_headline: 'Vous avez reçu une lettre confuse ?', home_subtitle: "Nous vous dirons exactement ce qu'elle signifie.", how_start: 'Comment souhaitez-vous commencer ?',
+    take_photo: 'Prendre une photo', take_photo_sub: 'Pointez votre appareil photo vers le document', upload_doc: 'Téléverser un document', upload_doc_sub: 'Choisissez un PDF dans vos fichiers',
+    paste_text: 'Saisir ou coller du texte', paste_text_sub: 'Copiez et collez le texte du document', try_example: 'Essayez un exemple',
+    processing_status: 'Analyse de votre document', processing_title: 'Lecture de votre document…',
+    what_this_means: 'Ce que cela signifie', what_to_do: 'Ce que vous devez faire', who_can_help: 'Qui peut vous aider',
+    talk_to_person: 'Parler à une personne réelle', free_available: 'Gratuit • Disponible 24 h/24 • Aucun compte requis', get_human_help: 'Obtenir une aide humaine', services_free: 'Ces services sont gratuits et confidentiels.',
+    immediate: 'Immédiat', this_week: 'Cette semaine', no_deadline: 'Aucune échéance', confident: 'Confiant', review_recommended: 'Vérification recommandée', verify_expert: 'Vérifiez avec un expert',
+    what_to_say: 'Quoi dire lorsque vous appelez', nav_home: 'Accueil', nav_history: 'Historique', nav_help: 'Aide',
+    disclaimer: 'ClearPath explique les documents pour vous aider à comprendre votre situation. Il ne fournit pas de conseils juridiques.', no_data_stored: 'Vos documents ne sont jamais conservés', choose_language: 'Choisissez votre langue',
+    cannot_legal_advice: 'ClearPath ne peut pas donner de conseils juridiques. Ces organismes le peuvent.', paste_title: 'Collez votre document', explain_btn: 'Expliquer ce document',
+    textarea_ph: 'Collez ici le texte de votre lettre ou avis…', city_ph: 'Votre ville (facultatif — pour les ressources locales)',
+    history_title: "Rien d'enregistré ici", history_body: 'ClearPath ne conserve jamais vos documents. Votre historique reste privé et disparaît à votre départ.',
+    help_title: "Besoin de parler à quelqu'un ?", help_body: 'Une aide réelle, gratuite et confidentielle à portée de main — aucun compte requis.',
+    detected_tpl: 'Nous avons détecté que votre appareil est réglé sur {lang}. Utilisation de {lang} — appuyez pour changer.',
+    chip_eviction: "Avis d'expulsion", chip_benefits: 'Lettre de prestations', chip_discharge: "Sortie d'hôpital", chip_school: 'Avis scolaire', chip_utility: 'Coupure de service',
+  },
+  ko: {
+    home_headline: '이해하기 어려운 편지를 받으셨나요?', home_subtitle: '그것이 정확히 무슨 뜻인지 알려드립니다.', how_start: '어떻게 시작하시겠어요?',
+    take_photo: '사진 찍기', take_photo_sub: '카메라를 문서에 비추세요', upload_doc: '문서 업로드', upload_doc_sub: '파일에서 PDF를 선택하세요',
+    paste_text: '텍스트 입력 또는 붙여넣기', paste_text_sub: '문서 텍스트를 복사해서 붙여넣으세요', try_example: '예시 보기',
+    processing_status: '문서를 분석하는 중', processing_title: '문서를 읽는 중…',
+    what_this_means: '이것이 의미하는 것', what_to_do: '해야 할 일', who_can_help: '도움을 줄 수 있는 곳',
+    talk_to_person: '실제 상담원과 통화하기', free_available: '무료 • 24시간 이용 가능 • 계정 불필요', get_human_help: '사람의 도움 받기', services_free: '이 서비스는 무료이며 비밀이 보장됩니다.',
+    immediate: '즉시', this_week: '이번 주', no_deadline: '기한 없음', confident: '확신', review_recommended: '검토 권장', verify_expert: '전문가에게 확인하세요',
+    what_to_say: '전화할 때 할 말', nav_home: '홈', nav_history: '기록', nav_help: '도움말',
+    disclaimer: 'ClearPath는 상황을 이해하도록 문서를 설명합니다. 법률 자문을 제공하지는 않습니다.', no_data_stored: '귀하의 문서는 절대 저장되지 않습니다', choose_language: '언어를 선택하세요',
+    cannot_legal_advice: 'ClearPath는 법률 자문을 제공할 수 없습니다. 이 기관들은 가능합니다.', paste_title: '문서를 붙여넣으세요', explain_btn: '이 문서 설명하기',
+    textarea_ph: '여기에 편지나 통지서의 내용을 붙여넣으세요…', city_ph: '도시 (선택 — 지역 자원 안내용)',
+    history_title: '저장된 항목이 없습니다', history_body: 'ClearPath는 문서를 저장하지 않습니다. 기록은 비공개이며 나가면 사라집니다.',
+    help_title: '누군가와 이야기가 필요하신가요?', help_body: '실제의 무료 비밀 상담을 한 번의 터치로 — 계정이 필요 없습니다.',
+    detected_tpl: '기기 언어가 {lang}(으)로 설정된 것을 감지했습니다. {lang} 사용 중 — 변경하려면 누르세요.',
+    chip_eviction: '퇴거 통지서', chip_benefits: '복지 수당 안내문', chip_discharge: '퇴원 안내', chip_school: '학교 통지문', chip_utility: '공과금 단전·단수 통지',
+  },
+  ru: {
+    home_headline: 'Получили непонятное письмо?', home_subtitle: 'Мы расскажем, что именно оно означает.', how_start: 'Как вы хотите начать?',
+    take_photo: 'Сделать фото', take_photo_sub: 'Наведите камеру на документ', upload_doc: 'Загрузить документ', upload_doc_sub: 'Выберите PDF из ваших файлов',
+    paste_text: 'Ввести или вставить текст', paste_text_sub: 'Скопируйте и вставьте текст документа', try_example: 'Попробуйте пример',
+    processing_status: 'Анализируем ваш документ', processing_title: 'Читаем ваш документ…',
+    what_this_means: 'Что это значит', what_to_do: 'Что нужно сделать', who_can_help: 'Кто может вам помочь',
+    talk_to_person: 'Поговорить с живым человеком', free_available: 'Бесплатно • Круглосуточно • Без регистрации', get_human_help: 'Получить помощь человека', services_free: 'Эти услуги бесплатны и конфиденциальны.',
+    immediate: 'Срочно', this_week: 'На этой неделе', no_deadline: 'Без срока', confident: 'Уверенно', review_recommended: 'Рекомендуется проверить', verify_expert: 'Проверьте у специалиста',
+    what_to_say: 'Что сказать при звонке', nav_home: 'Главная', nav_history: 'История', nav_help: 'Помощь',
+    disclaimer: 'ClearPath объясняет документы, чтобы помочь вам понять вашу ситуацию. Он не предоставляет юридических консультаций.', no_data_stored: 'Ваши документы никогда не сохраняются', choose_language: 'Выберите язык',
+    cannot_legal_advice: 'ClearPath не может давать юридические консультации. Эти организации могут.', paste_title: 'Вставьте ваш документ', explain_btn: 'Объяснить этот документ',
+    textarea_ph: 'Вставьте сюда текст вашего письма или уведомления…', city_ph: 'Ваш город (необязательно — для местных ресурсов)',
+    history_title: 'Здесь ничего не сохранено', history_body: 'ClearPath никогда не хранит ваши документы. Ваша история приватна и исчезает, когда вы уходите.',
+    help_title: 'Нужно с кем-то поговорить?', help_body: 'Настоящая, бесплатная и конфиденциальная помощь в одно касание — без регистрации.',
+    detected_tpl: 'Мы определили, что на вашем устройстве выбран {lang}. Используем {lang} — нажмите, чтобы изменить.',
+    chip_eviction: 'Уведомление о выселении', chip_benefits: 'Письмо о пособиях', chip_discharge: 'Выписка из больницы', chip_school: 'Школьное уведомление', chip_utility: 'Отключение коммунальных услуг',
+  },
+  ht: {
+    home_headline: 'Èske ou resevwa yon lèt ki konfonn ou?', home_subtitle: 'Nou pral di ou egzakteman sa li vle di.', how_start: 'Kijan ou vle kòmanse?',
+    take_photo: 'Pran yon foto', take_photo_sub: 'Vize kamera a sou dokiman an', upload_doc: 'Telechaje yon dokiman', upload_doc_sub: 'Chwazi yon PDF nan dosye ou yo',
+    paste_text: 'Tape oswa kole tèks', paste_text_sub: 'Kopye epi kole tèks dokiman an', try_example: 'Eseye yon egzanp',
+    processing_status: 'N ap analize dokiman ou an', processing_title: 'N ap li dokiman ou an…',
+    what_this_means: 'Sa sa vle di', what_to_do: 'Sa ou bezwen fè', who_can_help: 'Ki moun ki ka ede ou',
+    talk_to_person: 'Pale ak yon vrè moun', free_available: 'Gratis • Disponib 24 sou 24 • Pa bezwen kont', get_human_help: 'Jwenn èd nan men yon moun', services_free: 'Sèvis sa yo gratis epi konfidansyèl.',
+    immediate: 'Imedyat', this_week: 'Semèn sa a', no_deadline: 'Pa gen dat limit', confident: 'Konfyan', review_recommended: 'Nou rekòmande ou verifye', verify_expert: 'Verifye ak yon ekspè',
+    what_to_say: 'Sa pou ou di lè ou rele', nav_home: 'Akèy', nav_history: 'Istwa', nav_help: 'Èd',
+    disclaimer: 'ClearPath eksplike dokiman pou ede ou konprann sitiyasyon ou. Li pa bay konsèy legal.', no_data_stored: 'Dokiman ou yo pa janm konsève', choose_language: 'Chwazi lang ou',
+    cannot_legal_advice: 'ClearPath pa ka bay konsèy legal. Òganizasyon sa yo kapab.', paste_title: 'Kole dokiman ou an', explain_btn: 'Eksplike dokiman sa a',
+    textarea_ph: 'Kole tèks lèt oswa avi ou a isit la…', city_ph: 'Vil ou (opsyonèl — pou resous lokal yo)',
+    history_title: 'Pa gen anyen ki sove la a', history_body: 'ClearPath pa janm konsève dokiman ou yo. Istwa ou rete prive epi li disparèt lè ou ale.',
+    help_title: 'Ou bezwen pale ak yon moun?', help_body: 'Vrè èd, gratis, konfidansyèl nan yon sèl manyen — pa bezwen kont.',
+    detected_tpl: 'Nou detekte aparèy ou an mete sou {lang}. N ap itilize {lang} — peze pou chanje.',
+    chip_eviction: 'Avi Degèpisman', chip_benefits: 'Lèt Benefis', chip_discharge: 'Sòti Lopital', chip_school: 'Avi Lekòl', chip_utility: 'Koupe Sèvis',
+  },
+  pt: {
+    home_headline: 'Recebeu uma carta confusa?', home_subtitle: 'Vamos dizer exatamente o que ela significa.', how_start: 'Como você gostaria de começar?',
+    take_photo: 'Tirar uma foto', take_photo_sub: 'Aponte a câmera para o documento', upload_doc: 'Enviar um documento', upload_doc_sub: 'Escolha um PDF dos seus arquivos',
+    paste_text: 'Digitar ou colar texto', paste_text_sub: 'Copie e cole o texto do documento', try_example: 'Experimente um exemplo',
+    processing_status: 'Analisando seu documento', processing_title: 'Lendo seu documento…',
+    what_this_means: 'O que isto significa', what_to_do: 'O que você precisa fazer', who_can_help: 'Quem pode ajudar você',
+    talk_to_person: 'Falar com uma pessoa real', free_available: 'Gratuito • Disponível 24 horas • Sem necessidade de conta', get_human_help: 'Obter ajuda humana', services_free: 'Estes serviços são gratuitos e confidenciais.',
+    immediate: 'Imediato', this_week: 'Esta semana', no_deadline: 'Sem prazo', confident: 'Confiante', review_recommended: 'Revisão recomendada', verify_expert: 'Confirme com um especialista',
+    what_to_say: 'O que dizer ao ligar', nav_home: 'Início', nav_history: 'Histórico', nav_help: 'Ajuda',
+    disclaimer: 'O ClearPath explica documentos para ajudar você a entender sua situação. Ele não fornece aconselhamento jurídico.', no_data_stored: 'Seus documentos nunca são armazenados', choose_language: 'Escolha seu idioma',
+    cannot_legal_advice: 'O ClearPath não pode dar aconselhamento jurídico. Estas organizações podem.', paste_title: 'Cole seu documento', explain_btn: 'Explicar este documento',
+    textarea_ph: 'Cole aqui o texto da sua carta ou aviso…', city_ph: 'Sua cidade (opcional — para recursos locais)',
+    history_title: 'Nada salvo aqui', history_body: 'O ClearPath nunca armazena seus documentos. Seu histórico é privado e desaparece quando você sai.',
+    help_title: 'Precisa falar com alguém?', help_body: 'Ajuda real, gratuita e confidencial a um toque — sem necessidade de conta.',
+    detected_tpl: 'Detectamos que seu dispositivo está configurado em {lang}. Usando {lang} — toque para mudar.',
+    chip_eviction: 'Aviso de despejo', chip_benefits: 'Carta de benefícios', chip_discharge: 'Alta hospitalar', chip_school: 'Aviso escolar', chip_utility: 'Corte de serviços',
+  },
+  hi: {
+    home_headline: 'क्या आपको कोई उलझन भरा पत्र मिला है?', home_subtitle: 'हम आपको बताएंगे कि इसका वास्तव में क्या मतलब है।', how_start: 'आप कैसे शुरू करना चाहेंगे?',
+    take_photo: 'फ़ोटो लें', take_photo_sub: 'कैमरे को दस्तावेज़ की ओर रखें', upload_doc: 'दस्तावेज़ अपलोड करें', upload_doc_sub: 'अपनी फ़ाइलों से एक PDF चुनें',
+    paste_text: 'टेक्स्ट टाइप करें या पेस्ट करें', paste_text_sub: 'दस्तावेज़ का टेक्स्ट कॉपी करके पेस्ट करें', try_example: 'एक उदाहरण आज़माएँ',
+    processing_status: 'आपके दस्तावेज़ का विश्लेषण किया जा रहा है', processing_title: 'आपका दस्तावेज़ पढ़ा जा रहा है…',
+    what_this_means: 'इसका क्या मतलब है', what_to_do: 'आपको क्या करना है', who_can_help: 'कौन आपकी मदद कर सकता है',
+    talk_to_person: 'किसी वास्तविक व्यक्ति से बात करें', free_available: 'मुफ़्त • 24 घंटे उपलब्ध • खाते की ज़रूरत नहीं', get_human_help: 'किसी व्यक्ति से मदद लें', services_free: 'ये सेवाएँ मुफ़्त और गोपनीय हैं।',
+    immediate: 'तत्काल', this_week: 'इस सप्ताह', no_deadline: 'कोई समय-सीमा नहीं', confident: 'आश्वस्त', review_recommended: 'समीक्षा की सलाह दी जाती है', verify_expert: 'किसी विशेषज्ञ से पुष्टि करें',
+    what_to_say: 'कॉल करते समय क्या कहें', nav_home: 'होम', nav_history: 'इतिहास', nav_help: 'सहायता',
+    disclaimer: 'ClearPath दस्तावेज़ों को समझाता है ताकि आप अपनी स्थिति समझ सकें। यह कानूनी सलाह नहीं देता।', no_data_stored: 'आपके दस्तावेज़ कभी संग्रहीत नहीं किए जाते', choose_language: 'अपनी भाषा चुनें',
+    cannot_legal_advice: 'ClearPath कानूनी सलाह नहीं दे सकता। ये संस्थाएँ दे सकती हैं।', paste_title: 'अपना दस्तावेज़ पेस्ट करें', explain_btn: 'इस दस्तावेज़ को समझाएँ',
+    textarea_ph: 'अपने पत्र या सूचना का टेक्स्ट यहाँ पेस्ट करें…', city_ph: 'आपका शहर (वैकल्पिक — स्थानीय संसाधनों के लिए)',
+    history_title: 'यहाँ कुछ भी सहेजा नहीं गया', history_body: 'ClearPath आपके दस्तावेज़ कभी संग्रहीत नहीं करता। आपका इतिहास निजी रहता है और जब आप जाते हैं तो मिट जाता है।',
+    help_title: 'किसी से बात करनी है?', help_body: 'वास्तविक, मुफ़्त, गोपनीय मदद एक टैप दूर — खाते की ज़रूरत नहीं।',
+    detected_tpl: 'हमने पाया कि आपका डिवाइस {lang} पर सेट है। {lang} का उपयोग किया जा रहा है — बदलने के लिए टैप करें।',
+    chip_eviction: 'बेदखली नोटिस', chip_benefits: 'लाभ पत्र', chip_discharge: 'अस्पताल से छुट्टी', chip_school: 'स्कूल सूचना', chip_utility: 'उपयोगिता कटौती',
+  },
+  so: {
+    home_headline: 'Ma heshay warqad wareersan?', home_subtitle: 'Waxaan kuu sheegi doonnaa waxa ay sax ahaan ka dhigan tahay.', how_start: 'Sidee ayaad rabtaa inaad ku bilowdo?',
+    take_photo: 'Sawir qaad', take_photo_sub: 'Kamarada u soo jeedi dukumentiga', upload_doc: 'Soo geli dukumenti', upload_doc_sub: 'Ka dooro PDF faylashaada',
+    paste_text: 'Qor ama dhaji qoraal', paste_text_sub: 'Koobi garee oo dhaji qoraalka dukumentiga', try_example: 'Tijaabi tusaale',
+    processing_status: 'Waxaa la falanqaynayaa dukumentigaaga', processing_title: 'Waxaa la akhrinayaa dukumentigaaga…',
+    what_this_means: 'Waxa ay tani ka dhigan tahay', what_to_do: 'Waxa aad u baahan tahay inaad samayso', who_can_help: 'Cidda ku caawin karta',
+    talk_to_person: 'La hadal qof dhab ah', free_available: 'Bilaash • 24 saac la heli karo • Akoon looma baahna', get_human_help: "Hel caawimaad bini'aadam", services_free: 'Adeegyadan waa bilaash waana qarsoodi.',
+    immediate: 'Degdeg ah', this_week: 'Toddobaadkan', no_deadline: 'Wakhti kama dambays ah ma jiro', confident: 'Hubaal', review_recommended: 'Waxaa lagula talinayaa dib u eegis', verify_expert: 'Xaqiiji khabiir',
+    what_to_say: 'Waxa aad dhahdo markaad wacdo', nav_home: 'Guriga', nav_history: 'Taariikhda', nav_help: 'Caawimaad',
+    disclaimer: 'ClearPath wuxuu sharaxaa dukumentiyada si uu kaaga caawiyo inaad fahanto xaaladaada. Ma bixiyo talo sharci.', no_data_stored: 'Dukumentiyadaada waligood lama kaydiyo', choose_language: 'Dooro luqaddaada',
+    cannot_legal_advice: "ClearPath ma bixin karo talo sharci. Hay'adahani way awoodaan.", paste_title: 'Dhaji dukumentigaaga', explain_btn: 'Sharax dukumentigan',
+    textarea_ph: 'Halkan ku dhaji qoraalka warqaddaada ama ogeysiiskaaga…', city_ph: 'Magaaladaada (ikhtiyaari — kheyraadka deegaanka)',
+    history_title: 'Halkan waxba lama kaydin', history_body: "ClearPath waligii ma kaydiyo dukumentiyadaada. Taariikhdaadu waa qarsoodi waxayna baabba'daa markaad baxdo.",
+    help_title: 'Ma u baahan tahay inaad qof la hadasho?', help_body: 'Caawimaad dhab ah, bilaash ah, qarsoodi ah oo hal taabasho u jirta — akoon looma baahna.',
+    detected_tpl: 'Waxaan ogaanay in qalabkaagu loo dhigay {lang}. Waxaa la isticmaalayaa {lang} — taabo si aad u bedesho.',
+    chip_eviction: 'Ogeysiis Saarid', chip_benefits: 'Warqad Gargaar', chip_discharge: 'Ka-saarista Isbitaalka', chip_school: 'Ogeysiis Iskuul', chip_utility: 'Goynta Adeegyada',
+  },
+  am: {
+    home_headline: 'ግራ የሚያጋባ ደብዳቤ ደርሶዎታል?', home_subtitle: 'ምን ማለት እንደሆነ በትክክል እንነግርዎታለን።', how_start: 'እንዴት መጀመር ይፈልጋሉ?',
+    take_photo: 'ፎቶ ያንሱ', take_photo_sub: 'ካሜራውን ወደ ሰነዱ ያቅኑ', upload_doc: 'ሰነድ ይስቀሉ', upload_doc_sub: 'ከፋይሎችዎ PDF ይምረጡ',
+    paste_text: 'ጽሑፍ ይተይቡ ወይም ይለጥፉ', paste_text_sub: 'የሰነዱን ጽሑፍ ይቅዱና ይለጥፉ', try_example: 'ምሳሌ ይሞክሩ',
+    processing_status: 'ሰነድዎን በመተንተን ላይ', processing_title: 'ሰነድዎን በማንበብ ላይ…',
+    what_this_means: 'ይህ ምን ማለት ነው', what_to_do: 'ምን ማድረግ እንዳለብዎ', who_can_help: 'ማን ሊረዳዎ ይችላል',
+    talk_to_person: 'ከእውነተኛ ሰው ጋር ይነጋገሩ', free_available: 'ነጻ • 24 ሰዓት ይገኛል • መለያ አያስፈልግም', get_human_help: 'የሰው እገዛ ያግኙ', services_free: 'እነዚህ አገልግሎቶች ነጻ እና ሚስጥራዊ ናቸው።',
+    immediate: 'አስቸኳይ', this_week: 'በዚህ ሳምንት', no_deadline: 'የጊዜ ገደብ የለም', confident: 'እርግጠኛ', review_recommended: 'እንዲገመገም ይመከራል', verify_expert: 'ከባለሙያ ያረጋግጡ',
+    what_to_say: 'ሲደውሉ ምን እንደሚሉ', nav_home: 'መነሻ', nav_history: 'ታሪክ', nav_help: 'እገዛ',
+    disclaimer: 'ClearPath ሰነዶችን በማብራራት ሁኔታዎን እንዲረዱ ይረዳዎታል። የሕግ ምክር አይሰጥም።', no_data_stored: 'ሰነዶችዎ በፍጹም አይቀመጡም', choose_language: 'ቋንቋዎን ይምረጡ',
+    cannot_legal_advice: 'ClearPath የሕግ ምክር መስጠት አይችልም። እነዚህ ድርጅቶች ግን ይችላሉ።', paste_title: 'ሰነድዎን ይለጥፉ', explain_btn: 'ይህን ሰነድ አብራራ',
+    textarea_ph: 'የደብዳቤዎን ወይም ማስታወቂያዎን ጽሑፍ እዚህ ይለጥፉ…', city_ph: 'ከተማዎ (አማራጭ — ለአካባቢ መርጃዎች)',
+    history_title: 'እዚህ ምንም አልተቀመጠም', history_body: 'ClearPath ሰነዶችዎን በፍጹም አያስቀምጥም። ታሪክዎ የግል ሆኖ ሲወጡ ይጠፋል።',
+    help_title: 'ከአንድ ሰው ጋር መነጋገር ይፈልጋሉ?', help_body: 'እውነተኛ፣ ነጻ፣ ሚስጥራዊ እገዛ በአንድ ንክኪ — መለያ አያስፈልግም።',
+    detected_tpl: 'መሣሪያዎ በ{lang} እንደተቀመጠ አግኝተናል። {lang} በመጠቀም ላይ — ለመቀየር ይንኩ።',
+    chip_eviction: 'የማስወጣት ማስታወቂያ', chip_benefits: 'የጥቅማጥቅም ደብዳቤ', chip_discharge: 'ከሆስፒታል መሰናበት', chip_school: 'የትምህርት ቤት ማስታወቂያ', chip_utility: 'የአገልግሎት መቋረጥ ማስታወቂያ',
+  },
+};
+
+// Supplementary strings (history + camera). Merged into every language with an
+// English fallback baked in, without overwriting existing translations.
+const EXTRA: Record<string, Dict> = {
+  en: {
+    history_recent: 'Recent documents', history_stored_local: 'Stored on this device only',
+    history_empty_title: 'No documents yet', history_empty_body: 'Documents you analyze will appear here',
+    history_empty_cta: 'Analyze your first document', clear_all: 'Clear all', analyzed_on: 'Analyzed on {date}',
+    remove_one: 'Remove this document from history?', remove_all: 'Remove all {n} documents from history? This cannot be undone.',
+    confirm_remove: 'Remove', keep: 'Cancel', delete: 'Delete',
+    offline_analyze: 'You are offline. You can still view your previous documents in History.',
+    error_title: 'We could not complete that', generic_error: 'Something went wrong. Please try again, or call 211 for help.',
+    camera_hint: 'Align your document within the frame and tap Capture', camera_review: 'Is the whole document clear and readable?',
+    retake: 'Retake', use_photo: 'Use this photo', cancel: 'Cancel',
+    camera_denied: 'Camera access is needed to photograph your document. You can also upload a PDF or paste the text instead.',
+    reading_photo: 'Reading your photo…', enable_camera: 'Enable camera',
+  },
+  es: {
+    history_recent: 'Documentos recientes', history_stored_local: 'Guardado solo en este dispositivo',
+    history_empty_title: 'Aún no hay documentos', history_empty_body: 'Los documentos que analice aparecerán aquí',
+    history_empty_cta: 'Analice su primer documento', clear_all: 'Borrar todo', analyzed_on: 'Analizado el {date}',
+    remove_one: '¿Eliminar este documento del historial?', remove_all: '¿Eliminar los {n} documentos del historial? Esto no se puede deshacer.',
+    confirm_remove: 'Eliminar', keep: 'Cancelar', delete: 'Eliminar',
+    offline_analyze: 'Está sin conexión. Aún puede ver sus documentos anteriores en el Historial.',
+    error_title: 'No pudimos completar eso', generic_error: 'Algo salió mal. Inténtelo de nuevo o llame al 211 para obtener ayuda.',
+    camera_hint: 'Alinee su documento dentro del marco y toque Capturar', camera_review: '¿Todo el documento se ve claro y legible?',
+    retake: 'Repetir', use_photo: 'Usar esta foto', cancel: 'Cancelar',
+    camera_denied: 'Se necesita acceso a la cámara para fotografiar su documento. También puede subir un PDF o pegar el texto.',
+    reading_photo: 'Leyendo su foto…', enable_camera: 'Activar la cámara',
+  },
+  ar: {
+    history_recent: 'المستندات الأخيرة', history_stored_local: 'محفوظ على هذا الجهاز فقط',
+    history_empty_title: 'لا توجد مستندات بعد', history_empty_body: 'ستظهر هنا المستندات التي تحللها',
+    history_empty_cta: 'حلّل أول مستند لك', clear_all: 'مسح الكل', analyzed_on: 'تم التحليل في {date}',
+    remove_one: 'إزالة هذا المستند من السجل؟', remove_all: 'إزالة كل المستندات ({n}) من السجل؟ لا يمكن التراجع عن ذلك.',
+    confirm_remove: 'إزالة', keep: 'إلغاء', delete: 'حذف',
+    offline_analyze: 'أنت غير متصل. لا يزال بإمكانك عرض مستنداتك السابقة في السجل.',
+    error_title: 'تعذّر علينا إكمال ذلك', generic_error: 'حدث خطأ ما. يرجى المحاولة مرة أخرى، أو اتصل بـ 211 للحصول على المساعدة.',
+    camera_hint: 'ضع المستند داخل الإطار واضغط على التقاط', camera_review: 'هل المستند كله واضح ومقروء؟',
+    retake: 'إعادة', use_photo: 'استخدم هذه الصورة', cancel: 'إلغاء',
+    camera_denied: 'يلزم الوصول إلى الكاميرا لتصوير مستندك. يمكنك أيضًا رفع ملف PDF أو لصق النص.',
+    reading_photo: 'جارٍ قراءة صورتك…', enable_camera: 'تفعيل الكاميرا',
+  },
+};
+Object.keys(STRINGS).forEach((code) => {
+  STRINGS[code] = { ...EXTRA.en, ...(EXTRA[code] || {}), ...STRINGS[code] };
+});
+
+const STORAGE_KEY = 'cp_lang';
+let current = 'en';
+const listeners = new Set<() => void>();
+
+function emit() {
+  listeners.forEach((l) => l());
+}
+function subscribe(cb: () => void) {
+  listeners.add(cb);
+  return () => listeners.delete(cb);
+}
+
+export function getLang(): string {
+  return current;
+}
+export function langMeta(code: string = current): Lang {
+  return BYCODE[code] || BYCODE.en;
+}
+export function isRTL(): boolean {
+  return !!BYCODE[current]?.rtl;
+}
+export function t(key: string): string {
+  return (STRINGS[current] && STRINGS[current][key]) || STRINGS.en[key] || key;
+}
+export function setLang(code: string, persist = true): void {
+  if (!BYCODE[code]) code = 'en';
+  current = code;
+  if (persist) AsyncStorage.setItem(STORAGE_KEY, code).catch(() => {});
+  emit();
+}
+
+export function matchDeviceLang(): string | null {
+  try {
+    const locales = Localization.getLocales();
+    for (const loc of locales) {
+      const tag = (loc.languageTag || '').toLowerCase();
+      const base = (loc.languageCode || '').toLowerCase();
+      // scriptCode exists at runtime but isn't in the Locale type on all SDK versions.
+      const script = (((loc as { scriptCode?: string }).scriptCode) || '').toLowerCase();
+      if (base === 'zh' || tag.startsWith('zh')) {
+        return script === 'hant' || /(tw|hk|mo|hant)/.test(tag) ? 'zh-Hant' : 'zh-Hans';
+      }
+      const map: Record<string, string> = { en: 'en', es: 'es', vi: 'vi', tl: 'tl', fil: 'tl', ar: 'ar', fr: 'fr', ko: 'ko', ru: 'ru', ht: 'ht', pt: 'pt', hi: 'hi', so: 'so', am: 'am' };
+      if (map[base]) return map[base];
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
+/** Resolve the startup language: saved choice wins, else device, else English. */
+export async function initLang(): Promise<{ detected: string | null; hadSaved: boolean }> {
+  let saved: string | null = null;
+  try {
+    saved = await AsyncStorage.getItem(STORAGE_KEY);
+  } catch {
+    /* ignore */
+  }
+  if (saved && BYCODE[saved]) {
+    setLang(saved, false);
+    return { detected: null, hadSaved: true };
+  }
+  const detected = matchDeviceLang();
+  setLang(detected || 'en', true);
+  return { detected, hadSaved: false };
+}
+
+/** Subscribe a component to language changes. */
+export function useI18n() {
+  useSyncExternalStore(subscribe, getLang, getLang);
+  return { t, lang: current, rtl: isRTL(), meta: langMeta() };
+}

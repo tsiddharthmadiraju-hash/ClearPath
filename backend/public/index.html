@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#1B4F72" />
+    <title>ClearPath</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="phone" id="phone">
+      <!-- one-time language detection banner -->
+      <div id="lang-banner" class="lang-banner" hidden></div>
+
+      <!-- ===================== HOME ===================== -->
+      <section id="screen-home" class="screen is-active">
+        <div class="scroll">
+          <header class="appbar">
+            <span class="appbar__name">ClearPath</span>
+            <button class="lang-btn" data-action="lang" aria-label="Choose your language">
+              <span class="lang-btn__globe">G</span>
+              <span id="lang-current">English</span>
+              <span class="lang-btn__chev">⌄</span>
+            </button>
+          </header>
+          <!-- one-time legal banner (FIX 10) -->
+          <div id="legal-banner" class="legal-banner" hidden>
+            <span class="legal-banner__text">ClearPath explains documents. It does not give legal advice. Free help is always one tap away.</span>
+            <button class="legal-banner__close" data-action="dismiss-legal" aria-label="Dismiss">✕</button>
+          </div>
+
+          <div class="hero">
+            <h1 class="display" data-i18n="home_headline">Received a letter you don't understand?</h1>
+            <p class="subhead" data-i18n="home_subtitle">ClearPath reads it and tells you exactly what to do.</p>
+          </div>
+
+          <p class="section-label" data-i18n="how_start">How would you like to start?</p>
+          <div class="method-list">
+            <button class="method" data-action="photo">
+              <span class="method__icon method__icon--photo">◉</span>
+              <span class="method__text">
+                <span class="method__title" data-i18n="take_photo">Take a Photo</span>
+                <span class="method__sub" data-i18n="take_photo_sub">Point your camera at the document</span>
+              </span>
+              <span class="method__chev">›</span>
+            </button>
+            <button class="method" data-action="upload">
+              <span class="method__icon method__icon--upload">↑</span>
+              <span class="method__text">
+                <span class="method__title" data-i18n="upload_doc">Upload a Document</span>
+                <span class="method__sub" data-i18n="upload_doc_sub">Choose a PDF from your files</span>
+              </span>
+              <span class="method__chev">›</span>
+            </button>
+            <button class="method" data-action="text">
+              <span class="method__icon method__icon--type">Aa</span>
+              <span class="method__text">
+                <span class="method__title" data-i18n="paste_text">Type or Paste Text</span>
+                <span class="method__sub" data-i18n="paste_text_sub">Copy and paste the document text</span>
+              </span>
+              <span class="method__chev">›</span>
+            </button>
+          </div>
+
+          <p class="section-label section-label--tight" data-i18n="try_example">Try an example</p>
+          <div class="chip-row" id="example-chips">
+            <button class="chip" data-example="eviction" data-i18n="chip_eviction">Eviction Notice</button>
+            <button class="chip" data-example="benefits" data-i18n="chip_benefits">Benefits Letter</button>
+            <button class="chip" data-example="discharge" data-i18n="chip_discharge">Hospital Discharge</button>
+            <button class="chip" data-example="school" data-i18n="chip_school">School Notice</button>
+            <button class="chip" data-example="utility" data-i18n="chip_utility">Utility Shutoff</button>
+          </div>
+
+          <p class="privacy-note"><span class="privacy-note__lock" aria-hidden="true">🔒︎</span><span data-i18n="no_data_stored">Your documents are never stored</span></p>
+        </div>
+      </section>
+
+      <!-- ===================== TEXT INPUT ===================== -->
+      <section id="screen-text" class="screen">
+        <div class="scroll">
+          <header class="subbar">
+            <button class="subbar__back" data-action="home">‹</button>
+            <h2 class="subbar__title" data-i18n="paste_title">Paste your document</h2>
+          </header>
+          <textarea id="text-input" class="textarea" data-i18n-ph="textarea_ph" placeholder="Paste the text of your letter or notice here…"></textarea>
+          <input id="location-input" class="textfield" type="text" data-i18n-ph="city_ph" placeholder="Your city (optional — for local resources)" />
+          <button class="btn btn--navy" data-action="analyze-text" data-i18n="explain_btn">Explain this document</button>
+        </div>
+      </section>
+
+      <!-- ===================== PROCESSING ===================== -->
+      <section id="screen-processing" class="screen">
+        <div class="processing">
+          <div class="pulse"></div>
+          <p class="processing__status" id="processing-status" data-i18n="processing_status">Analyzing your document</p>
+          <p class="processing__sub" id="processing-sub">Reading your document…</p>
+          <div class="pbar"><div class="pbar__fill" id="pbar-fill"></div></div>
+        </div>
+      </section>
+
+      <!-- ===================== RESULTS ===================== -->
+      <section id="screen-results" class="screen">
+        <div class="scroll" id="results-scroll">
+          <div class="results-top">
+            <button class="subbar__back" data-action="home">‹</button>
+            <span class="conf-pill" id="conf-pill"></span>
+          </div>
+          <div id="results-content"></div>
+        </div>
+        <div class="sticky-bar" id="results-sticky">
+          <button class="btn btn--amber" data-action="escalate" data-i18n="talk_to_person">Talk to a real person</button>
+          <p class="sticky-bar__note" data-i18n="free_available">Free • Available 24 hours a day • No account needed</p>
+        </div>
+      </section>
+
+      <!-- ===================== HISTORY ===================== -->
+      <section id="screen-history" class="screen">
+        <div class="scroll" id="history-scroll">
+          <div id="history-content"></div>
+        </div>
+      </section>
+
+      <!-- ===================== HELP ===================== -->
+      <section id="screen-help" class="screen">
+        <div class="scroll">
+          <header class="appbar"><span class="appbar__name" data-i18n="nav_help">Help</span></header>
+          <div class="empty-state">
+            <h2 class="title" data-i18n="help_title">Need to talk to someone?</h2>
+            <p class="subhead" data-i18n="help_body">Real, free, confidential help is one tap away.</p>
+            <button class="btn btn--amber" data-action="escalate" data-i18n="talk_to_person">Talk to a real person</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== BOTTOM NAV ===================== -->
+      <nav class="tabbar" id="tabbar">
+        <button class="tab is-active" data-tab="home"><span class="tab__label" data-i18n="nav_home">Home</span></button>
+        <button class="tab" data-tab="history"><span class="tab__label" data-i18n="nav_history">History</span><span class="tab__badge" id="history-badge" hidden>0</span></button>
+        <button class="tab" data-tab="help"><span class="tab__label" data-i18n="nav_help">Help</span></button>
+      </nav>
+    </div>
+
+    <!-- ===================== ESCALATION SHEET ===================== -->
+    <div id="escalation" class="sheet-overlay" hidden>
+      <div class="sheet">
+        <div class="sheet__handle"></div>
+        <button class="sheet__close" data-action="close-escalation" aria-label="Close">✕</button>
+        <h2 class="title" data-i18n="get_human_help">Get human help</h2>
+        <p class="subhead" data-i18n="services_free">These services are free and confidential.</p>
+        <div id="escalation-resources" class="sheet__list"></div>
+        <p class="sheet__note" data-i18n="cannot_legal_advice">ClearPath cannot give legal advice. These organizations can.</p>
+      </div>
+    </div>
+
+    <!-- ===================== LANGUAGE SHEET ===================== -->
+    <div id="lang-sheet" class="sheet-overlay" hidden>
+      <div class="sheet">
+        <div class="sheet__handle"></div>
+        <button class="sheet__close" data-action="close-lang" aria-label="Close">✕</button>
+        <h2 class="title" id="lang-sheet-title">Choose your language</h2>
+        <p class="subhead" id="lang-sheet-sub">Choose your language</p>
+        <div id="lang-list" class="sheet__list lang-list"></div>
+      </div>
+    </div>
+
+    <!-- ===================== CAMERA ===================== -->
+    <div id="camera-modal" class="camera-modal" hidden>
+      <video id="cam-video" class="camera-video" autoplay playsinline muted></video>
+      <canvas id="cam-canvas" hidden></canvas>
+      <img id="cam-preview" class="camera-preview" alt="" hidden />
+
+      <!-- live capture overlay -->
+      <div id="cam-live" class="camera-layer">
+        <button class="camera-cancel" data-action="cam-cancel" aria-label="Cancel">‹ <span data-i18n="cancel">Cancel</span></button>
+        <div class="camera-frame"><span></span><span></span><span></span><span></span></div>
+        <p class="camera-hint" data-i18n="camera_hint">Align your document within the frame and tap Capture</p>
+        <button class="camera-shutter" data-action="cam-capture" aria-label="Capture"></button>
+      </div>
+
+      <!-- after-capture review -->
+      <div id="cam-review" class="camera-layer camera-layer--review" hidden>
+        <p class="camera-hint" data-i18n="camera_review">Is the whole document clear and readable?</p>
+        <div class="camera-actions">
+          <button class="btn btn--ghost" data-action="cam-retake" data-i18n="retake">Retake</button>
+          <button class="btn btn--navy" data-action="cam-use" data-i18n="use_photo">Use this photo</button>
+        </div>
+      </div>
+
+      <!-- permission denied / unavailable -->
+      <div id="cam-denied" class="camera-denied" hidden>
+        <p class="camera-denied__text" data-i18n="camera_denied">Camera access is needed to photograph your document. You can also upload a PDF or paste the text instead.</p>
+        <div class="camera-actions camera-actions--stack">
+          <button class="btn btn--navy" data-action="cam-upload" data-i18n="upload_doc">Upload a Document</button>
+          <button class="btn btn--ghost" data-action="cam-paste" data-i18n="paste_text">Type or Paste Text</button>
+          <button class="btn btn--ghost" data-action="cam-cancel" data-i18n="cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================== DEV CHECKLIST (hidden, passcode-gated) ===================== -->
+    <div id="dev-overlay" class="sheet-overlay" hidden>
+      <div class="sheet dev-sheet">
+        <button class="sheet__close" data-action="dev-close" aria-label="Close">✕</button>
+        <div id="dev-pass">
+          <h2 class="title">Enter passcode</h2>
+          <p class="subhead">Developer access</p>
+          <div class="dev-dots" id="dev-dots"><span></span><span></span><span></span><span></span></div>
+          <p class="dev-pass-msg" id="dev-pass-msg" hidden>Incorrect</p>
+          <div class="dev-pad">
+            <button class="dev-key" data-digit="1">1</button>
+            <button class="dev-key" data-digit="2">2</button>
+            <button class="dev-key" data-digit="3">3</button>
+            <button class="dev-key" data-digit="4">4</button>
+            <button class="dev-key" data-digit="5">5</button>
+            <button class="dev-key" data-digit="6">6</button>
+            <button class="dev-key" data-digit="7">7</button>
+            <button class="dev-key" data-digit="8">8</button>
+            <button class="dev-key" data-digit="9">9</button>
+            <span class="dev-key dev-key--blank"></span>
+            <button class="dev-key" data-digit="0">0</button>
+            <button class="dev-key dev-key--del" data-action="dev-del">⌫</button>
+          </div>
+        </div>
+        <div id="dev-check" hidden>
+          <h2 class="title">Demo readiness check</h2>
+          <p class="subhead">A full system check before you record or present.</p>
+          <div id="dev-check-list" class="dev-check-list"></div>
+          <button class="btn btn--navy" data-action="dev-rerun">Re-run checks</button>
+          <button class="btn btn--ghost" data-action="dev-reset">Reset Demo</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- hidden file pickers -->
+    <input id="file-camera" type="file" accept="image/*" capture="environment" hidden />
+    <input id="file-upload" type="file" accept="image/*,application/pdf" hidden />
+
+    <script src="./translations.js"></script>
+    <script src="./examples.js"></script>
+    <script src="./history.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
