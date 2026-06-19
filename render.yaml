@@ -1,0 +1,25 @@
+# Render Blueprint — deploys the ClearPath backend, which ALSO serves the web UI.
+# One service = the website + the /analyze, /translate, /escalation APIs together.
+#
+# After pushing this file:
+#   1. Go to https://render.com → New → Blueprint → connect your GitHub repo.
+#   2. Render reads this file. Before "Apply", set the ANTHROPIC_API_KEY value
+#      (it is intentionally NOT in the repo).
+#   3. Deploy. Your live URL will be https://clearpath-XXXX.onrender.com
+#      — open it on any phone/laptop; upload, camera, paste all work.
+services:
+  - type: web
+    name: clearpath
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: node src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false # set this in the Render dashboard — never commit the key
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
