@@ -334,6 +334,10 @@ function buildResults(analysis, historyMeta) {
               <span class="badge badge--${u}">${esc(urgencyLabel(u))}</span>
               ${s.deadline ? `<span class="step-deadline">${esc(s.deadline)}</span>` : ''}
             </div>
+            <button class="step-expand" data-expand="${i}" aria-expanded="false">
+              <span class="step-expand__chev">›</span><span class="step-expand__label">${esc(t('explain_more'))}</span>
+            </button>
+            <div class="step-expanded" id="step-exp-${i}" hidden></div>
           </div>
           <div class="check"></div>
         </div>`;
@@ -383,11 +387,16 @@ function buildResults(analysis, historyMeta) {
   root.querySelectorAll('.step-card').forEach((card) => {
     const key = 'step_' + (Number(card.dataset.step) + 1);
     if (historyMeta && historyMeta.checkedSteps && historyMeta.checkedSteps[key]) card.classList.add('is-done');
-    card.addEventListener('click', () => {
+    card.addEventListener('click', (e) => {
+      // Clicks on the "explain more" button/panel must not toggle the checkmark.
+      if (e.target.closest('.step-expand') || e.target.closest('.step-expanded')) return;
       const done = card.classList.toggle('is-done');
       // Persist checked state back to this history item (Maria's court-date use case).
       if (lastHistoryMeta && window.CP_History) window.CP_History.setChecked(lastHistoryMeta.id, key, done);
     });
+  });
+  root.querySelectorAll('.step-expand').forEach((btn) => {
+    btn.addEventListener('click', (e) => { e.stopPropagation(); toggleExpand(btn); });
   });
   root.querySelectorAll('.script-toggle').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -397,6 +406,39 @@ function buildResults(analysis, historyMeta) {
       body.hidden = open;
     });
   });
+}
+
+/**
+ * "Explain this in more detail" — expand one checklist step into simpler
+ * sub-steps via /expand. Result is cached on the element so re-opening is free.
+ */
+async function toggleExpand(btn) {
+  const i = Number(btn.dataset.expand);
+  const box = el('step-exp-' + i);
+  if (!box) return;
+  const open = btn.getAttribute('aria-expanded') === 'true';
+  if (open) { btn.setAttribute('aria-expanded', 'false'); box.hidden = true; return; }
+  btn.setAttribute('aria-expanded', 'true');
+  box.hidden = false;
+  if (box.dataset.loaded === '1') return; // already fetched — just re-open
+  const step = ((lastAnalysis && lastAnalysis.action_checklist) || [])[i] || {};
+  if (!step.action) { box.hidden = true; return; }
+  if (!navigator.onLine) { box.innerHTML = `<p class="step-expanded__status">${esc(t('offline_analyze'))}</p>`; return; }
+  box.innerHTML = `<p class="step-expanded__status">${esc(t('breaking_down'))}</p>`;
+  try {
+    const langName = (BYCODE[lang] || BYCODE.en).english;
+    const res = await fetch('/expand', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: step.action, detail: step.detail || '', documentType: lastDocumentType, language: langName }),
+    });
+    const data = await res.json();
+    if (!res.ok || !Array.isArray(data.steps) || !data.steps.length) throw new Error(data.message || 'expand failed');
+    box.innerHTML = '<ol class="mini-steps">' + data.steps.map((s) => `<li>${esc(s)}</li>`).join('') + '</ol>';
+    box.dataset.loaded = '1';
+  } catch {
+    box.innerHTML = `<p class="step-expanded__status step-expanded__status--err">${esc(t('expand_failed'))}</p>`;
+  }
 }
 
 function renderResults(analysis, historyMeta) {
@@ -653,7 +695,18 @@ async function openCamera() {
   el('cam-live').hidden = false;
   el('cam-video').hidden = false;
   try {
-    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+    // Request the rear camera at high resolution so document text is sharp
+    // enough to read. `ideal` lets the browser pick the closest it supports
+    // (so it never over-constrains and fails on lower-end cameras).
+    camStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: 'environment' },
+        width: { ideal: 2560 },
+        height: { ideal: 1440 },
+        advanced: [{ focusMode: 'continuous' }],
+      },
+      audio: false,
+    });
     el('cam-video').srcObject = camStream;
   } catch {
     showCameraDenied();
@@ -675,7 +728,7 @@ function capturePhoto() {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
   canvas.getContext('2d').drawImage(video, 0, 0);
-  camDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  camDataUrl = canvas.toDataURL('image/jpeg', 0.92);
   stopCamStream();
   el('cam-preview').src = camDataUrl;
   el('cam-preview').hidden = false;

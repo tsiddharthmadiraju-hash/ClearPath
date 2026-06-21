@@ -402,6 +402,8 @@ window.CP_LANG_BY_CODE = Object.fromEntries(window.CP_LANGUAGES.map((l) => [l.co
       confirm_remove: 'Remove', keep: 'Cancel', delete: 'Delete',
       offline_analyze: 'You are offline. You can still view your previous documents in History.',
       error_title: 'We could not complete that', generic_error: 'Something went wrong. Please try again, or call 211 for help.',
+      explain_more: 'Explain this step in more detail', breaking_down: 'Breaking this into simple steps…',
+      expand_failed: 'Could not break this down right now. Please try again.',
     },
     es: {
       cancel: 'Cancelar', camera_hint: 'Alinee su documento dentro del marco y toque Capturar',
@@ -415,6 +417,8 @@ window.CP_LANG_BY_CODE = Object.fromEntries(window.CP_LANGUAGES.map((l) => [l.co
       confirm_remove: 'Eliminar', keep: 'Cancelar', delete: 'Eliminar',
       offline_analyze: 'Está sin conexión. Aún puede ver sus documentos anteriores en el Historial.',
       error_title: 'No pudimos completar eso', generic_error: 'Algo salió mal. Inténtelo de nuevo o llame al 211 para obtener ayuda.',
+      explain_more: 'Explicar este paso con más detalle', breaking_down: 'Dividiéndolo en pasos sencillos…',
+      expand_failed: 'No se pudo desglosar ahora. Inténtelo de nuevo.',
     },
     ar: {
       cancel: 'إلغاء', camera_hint: 'ضع المستند داخل الإطار واضغط على التقاط',
@@ -428,6 +432,8 @@ window.CP_LANG_BY_CODE = Object.fromEntries(window.CP_LANGUAGES.map((l) => [l.co
       confirm_remove: 'إزالة', keep: 'إلغاء', delete: 'حذف',
       offline_analyze: 'أنت غير متصل. لا يزال بإمكانك عرض مستنداتك السابقة في السجل.',
       error_title: 'تعذّر علينا إكمال ذلك', generic_error: 'حدث خطأ ما. يرجى المحاولة مرة أخرى، أو اتصل بـ 211 للحصول على المساعدة.',
+      explain_more: 'اشرح هذه الخطوة بمزيد من التفصيل', breaking_down: 'جارٍ تقسيمها إلى خطوات بسيطة…',
+      expand_failed: 'تعذّر تبسيط هذه الخطوة الآن. حاول مرة أخرى.',
     },
   };
   if (window.CP_STRINGS) {

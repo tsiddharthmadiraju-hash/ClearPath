@@ -252,6 +252,27 @@ button { font-family: inherit; cursor: pointer; }
 .check svg { width: 15px; height: 15px; }
 .step-card.is-done .check { background: var(--navy); border-color: var(--navy); color: #fff; }
 
+/* "Explain this step in more detail" expander */
+.step-expand {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: none; border: none; padding: 8px 0 0; margin-top: 4px;
+  font-size: 13px; font-weight: 700; color: var(--navy); cursor: pointer;
+}
+.step-expand__chev { font-size: 16px; line-height: 1; transition: transform 0.2s ease; }
+.step-expand[aria-expanded="true"] .step-expand__chev { transform: rotate(90deg); }
+.step-expanded { margin-top: 8px; }
+.step-expanded[hidden] { display: none; }
+.step-expanded__status { font-size: 13px; color: var(--muted); margin: 0; padding: 6px 0; }
+.step-expanded__status--err { color: var(--red-text); }
+.mini-steps {
+  margin: 2px 0; padding: 12px 14px 12px 32px;
+  background: var(--navy-soft); border-radius: var(--r-btn);
+  display: flex; flex-direction: column; gap: 9px;
+}
+.mini-steps li { font-size: 14px; line-height: 1.5; color: #1f2937; padding-inline-start: 2px; }
+[dir="rtl"] .step-expand__chev { display: inline-block; transform: scaleX(-1); }
+[dir="rtl"] .step-expand[aria-expanded="true"] .step-expand__chev { transform: rotate(90deg); }
+
 /* Resources */
 .resource-card { background: var(--card); border-radius: var(--r-card); box-shadow: var(--shadow); padding: 18px; margin-bottom: 12px; }
 .resource-card__name { font-size: 16px; font-weight: 800; margin: 0; }
@@ -395,7 +416,11 @@ button { font-family: inherit; cursor: pointer; }
 .camera-modal[hidden] { display: none; }
 .camera-video, .camera-preview { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .camera-preview { object-fit: contain; background: #000; }
-.camera-layer { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: calc(16px + var(--safe)) 20px calc(28px + var(--safe)); }
+.camera-layer { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding: calc(16px + var(--safe)) 20px calc(40px + var(--safe)); }
+/* Without this, the .camera-layer display:flex above overrides the `hidden`
+   attribute, so the live and review layers render stacked on top of each other
+   (the capture button ends up buried behind the review buttons). */
+.camera-layer[hidden] { display: none; }
 .camera-cancel { position: absolute; top: calc(14px + var(--safe)); inset-inline-start: 14px; background: rgba(0,0,0,0.45); color: #fff; border: none; border-radius: var(--r-pill); padding: 8px 16px; font-size: 15px; font-weight: 600; cursor: pointer; z-index: 2; }
 .camera-frame { position: relative; width: 78%; flex: 1; margin: 64px 0 0; max-height: 58%; }
 .camera-frame span { position: absolute; width: 26px; height: 26px; border: 3px solid rgba(255,255,255,0.95); }
@@ -404,7 +429,7 @@ button { font-family: inherit; cursor: pointer; }
 .camera-frame span:nth-child(3) { bottom: 0; left: 0; border-right: none; border-top: none; border-radius: 0 0 0 8px; }
 .camera-frame span:nth-child(4) { bottom: 0; right: 0; border-left: none; border-top: none; border-radius: 0 0 8px 0; }
 .camera-hint { margin: 16px 0; color: #fff; font-size: 14px; font-weight: 500; text-align: center; text-shadow: 0 1px 4px rgba(0,0,0,0.7); background: rgba(0,0,0,0.35); padding: 8px 14px; border-radius: 12px; }
-.camera-shutter { width: 72px; height: 72px; border-radius: 50%; background: #fff; border: 4px solid rgba(255,255,255,0.5); box-shadow: 0 0 0 4px rgba(0,0,0,0.25); cursor: pointer; margin-top: auto; }
+.camera-shutter { position: relative; z-index: 3; width: 78px; height: 78px; border-radius: 50%; background: #fff; border: 4px solid var(--navy); box-shadow: 0 0 0 4px rgba(255,255,255,0.9), 0 4px 14px rgba(0,0,0,0.45); cursor: pointer; margin-top: auto; flex-shrink: 0; }
 .camera-shutter:active { transform: scale(0.94); }
 .camera-layer--review { justify-content: flex-end; background: linear-gradient(to top, rgba(0,0,0,0.6), transparent 40%); }
 .camera-actions { display: flex; gap: 12px; width: 100%; }

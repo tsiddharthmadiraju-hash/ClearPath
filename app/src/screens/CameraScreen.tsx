@@ -47,7 +47,7 @@ export function CameraScreen({ onCapture, onCancel, onUpload, onPaste }: Props) 
     if (!cameraRef.current || busy) return;
     setBusy(true);
     try {
-      const pic = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.5 });
+      const pic = await cameraRef.current.takePictureAsync({ base64: true, quality: 0.9 });
       if (pic?.base64) { setPhotoUri(pic.uri); setPhotoB64(pic.base64); }
     } catch {
       /* ignore — user can retry */

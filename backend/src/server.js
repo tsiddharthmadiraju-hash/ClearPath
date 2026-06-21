@@ -11,7 +11,7 @@ import rateLimit from 'express-rate-limit';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { analyzeDocument, translateAnalysis, MOCK_MODE } from './analyze.js';
+import { analyzeDocument, translateAnalysis, expandStep, MOCK_MODE } from './analyze.js';
 import { validateAnalysis } from './validate.js';
 import { getDemoResponse } from './demoData.js';
 import { sanitizeText, detectInjection, validateImage, MAX_TEXT_LENGTH } from './security.js';
@@ -77,6 +77,8 @@ const analyzeLimiter = rl(
 );
 // Free demo responses: 50/hour. Skips anything that is not a demo request.
 const demoLimiter = rl(60 * 60 * 1000, 50, 'Too many demo requests. Please wait a little while.', (req) => !isDemoReq(req));
+// "Explain this step in more detail": 40/hour (cheap, but still capped).
+const expandLimiter = rl(60 * 60 * 1000, 40, 'Too many requests. Please wait a little while before expanding more steps.');
 
 app.use(globalLimiter);
 
@@ -308,6 +310,39 @@ app.post('/translate', async (req, res) => {
   } catch (err) {
     console.error('[translate] error:', err?.message || err);
     return res.status(502).json({ error: 'translate_failed', message: 'We could not translate this result. Please try again.' });
+  }
+});
+
+/**
+ * POST /expand — break ONE checklist step into simpler, more detailed sub-steps
+ * for a user who is stuck on it. Body: { action, detail, documentType, language }.
+ * No document content is stored.
+ */
+app.post('/expand', expandLimiter, async (req, res) => {
+  const { action, detail, documentType, language } = req.body || {};
+  const cleanAction = sanitizeText(typeof action === 'string' ? action : '');
+  const cleanDetail = sanitizeText(typeof detail === 'string' ? detail : '');
+  if (!cleanAction) {
+    return res.status(400).json({ error: 'bad_request', message: 'Send the step you want explained.' });
+  }
+  // MEASURE 4: block prompt injection on the way in, same as /analyze.
+  if (detectInjection(cleanAction) || (cleanDetail && detectInjection(cleanDetail))) {
+    return res.status(400).json({ error: 'injection_attempt', message: 'We could not process that step. Please try a different one.' });
+  }
+  try {
+    const { steps, mode, model } = await expandStep({
+      action: cleanAction,
+      detail: cleanDetail,
+      documentType: sanitizeText(typeof documentType === 'string' ? documentType : ''),
+      language,
+    });
+    if (!steps.length) {
+      return res.status(502).json({ error: 'expand_failed', message: 'We could not break this step down right now. Please try again.' });
+    }
+    return res.json({ steps, _meta: { mode, model } });
+  } catch (err) {
+    console.error('[expand] error:', err?.message || err);
+    return res.status(502).json({ error: 'expand_failed', message: 'We could not break this step down right now. Please try again.' });
   }
 });
 

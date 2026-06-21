@@ -8,6 +8,10 @@ import { pickMock } from './mockData.js';
  * (e.g. claude-sonnet-4-6 for harder documents).
  */
 const MODEL = process.env.CLEARPATH_MODEL || 'claude-haiku-4-5';
+// Reading text out of a PHOTO is harder than parsing typed text, so the image
+// path uses a stronger vision model by default for more accurate OCR. Override
+// with CLEARPATH_VISION_MODEL (set it to claude-haiku-4-5 to minimize image cost).
+const VISION_MODEL = process.env.CLEARPATH_VISION_MODEL || 'claude-sonnet-4-6';
 const MAX_TOKENS = 2000;
 
 const hasKey = Boolean(process.env.ANTHROPIC_API_KEY);
@@ -63,6 +67,9 @@ export async function analyzeDocument({ text, image, mediaType, location, langua
   }
 
   const system = SYSTEM_PROMPT + languageInstructions(language);
+  // Photos need stronger OCR than typed text, so route image input to the
+  // vision model and keep the fast/cheap model for pasted or PDF text.
+  const model = image ? VISION_MODEL : MODEL;
 
   const userContent = [];
   if (image) {
@@ -77,7 +84,11 @@ export async function analyzeDocument({ text, image, mediaType, location, langua
     userContent.push({
       type: 'text',
       text:
-        'Analyze the document in this image and return ONLY the JSON object described in your instructions.' +
+        'Read this photo of a document very carefully. First transcribe ALL visible text — including small ' +
+        'print, fine print, handwriting, dates, deadlines, dollar amounts, account/case numbers, addresses, ' +
+        'and names. If any part is blurry, glare-washed, or cut off, work only from what you can actually read ' +
+        'and lower your confidence accordingly rather than guessing. Then return ONLY the JSON object described ' +
+        'in your instructions.' +
         hint,
     });
   } else {
@@ -88,7 +99,7 @@ export async function analyzeDocument({ text, image, mediaType, location, langua
   }
 
   const response = await getClient().messages.create({
-    model: MODEL,
+    model,
     max_tokens: MAX_TOKENS,
     system,
     messages: [{ role: 'user', content: userContent }],
@@ -96,7 +107,7 @@ export async function analyzeDocument({ text, image, mediaType, location, langua
 
   const textBlock = response.content.find((b) => b.type === 'text');
   const raw = extractJson(textBlock ? textBlock.text : '');
-  return { raw, mode: 'live', model: MODEL };
+  return { raw, mode: 'live', model };
 }
 
 /**
@@ -125,4 +136,55 @@ export async function translateAnalysis(analysis, language) {
   });
   const textBlock = response.content.find((b) => b.type === 'text');
   return { raw: extractJson(textBlock ? textBlock.text : ''), mode: 'live', model: MODEL };
+}
+
+/**
+ * Break ONE action-checklist step into smaller, simpler sub-steps for a user who
+ * is stuck on it. Uses the fast/cheap text model — this is plain-language
+ * simplification, not analysis.
+ *
+ * @returns {Promise<{ steps: string[], mode: 'mock'|'live', model: string }>}
+ */
+export async function expandStep({ action, detail, documentType, language } = {}) {
+  const cleanAction = (typeof action === 'string' ? action : '').trim().slice(0, 600);
+  if (!cleanAction) return { steps: [], mode: MOCK_MODE ? 'mock' : 'live', model: 'none' };
+
+  if (MOCK_MODE) {
+    return {
+      steps: [
+        `Read this step slowly again: “${cleanAction}”.`,
+        'Gather what you need first — your letter, your ID, and any date or amount it mentions.',
+        'If there is a deadline, write it on your calendar today so you do not miss it.',
+        'Do the action above. If anything is unclear, call 211 (free) and read them this step — they will help you.',
+      ],
+      mode: 'mock',
+      model: 'mock',
+    };
+  }
+
+  const langLine = language && language !== 'English' ? ` Write every step in ${language}.` : '';
+  const system =
+    'A person who is worried and is NOT a lawyer is stuck on ONE step of a to-do list for a confusing ' +
+    'government or legal document. Break that single step into 3 to 6 very small, concrete sub-steps they can ' +
+    'do one at a time. Use plain, calm words at a 6th-grade reading level and short sentences. Be practical: ' +
+    'what to gather, who to call, what to say, what to write down. Do NOT invent facts, names, phone numbers, ' +
+    'or deadlines that are not given. Do NOT give legal advice. Return ONLY JSON: {"steps":["...","..."]}.' +
+    langLine;
+
+  const ctx =
+    `Document type: ${documentType || 'unknown'}\nStep to break down: ${cleanAction}` +
+    (detail ? `\nExisting note: ${String(detail).slice(0, 600)}` : '');
+
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 700,
+    system,
+    messages: [{ role: 'user', content: `Break this step into simple sub-steps:\n\n${ctx}` }],
+  });
+  const textBlock = response.content.find((b) => b.type === 'text');
+  const parsed = extractJson(textBlock ? textBlock.text : '');
+  const steps = Array.isArray(parsed.steps)
+    ? parsed.steps.filter((s) => typeof s === 'string' && s.trim()).map((s) => s.trim()).slice(0, 6)
+    : [];
+  return { steps, mode: 'live', model: MODEL };
 }

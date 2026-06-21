@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://clearpath-dtrg.onrender.com/sitemap.xml

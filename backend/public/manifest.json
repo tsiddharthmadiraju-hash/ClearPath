@@ -1,0 +1,19 @@
+{
+  "name": "ClearPath — Understand any letter",
+  "short_name": "ClearPath",
+  "description": "Turn confusing legal and government letters into plain language, clear next steps with deadlines, and free local help.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e9ecf1",
+  "theme_color": "#1b4f72",
+  "lang": "en",
+  "dir": "auto",
+  "categories": ["productivity", "government", "education", "utilities"],
+  "icons": [
+    { "src": "/favicon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" },
+    { "src": "/icon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
+  ]
+}
