@@ -252,12 +252,14 @@ button { font-family: inherit; cursor: pointer; }
 .check svg { width: 15px; height: 15px; }
 .step-card.is-done .check { background: var(--navy); border-color: var(--navy); color: #fff; }
 
-/* "Explain this step in more detail" expander */
+/* "Explain this step in more detail" expander — a clear, full-width tap target */
 .step-expand {
-  display: inline-flex; align-items: center; gap: 4px;
-  background: none; border: none; padding: 8px 0 0; margin-top: 4px;
-  font-size: 13px; font-weight: 700; color: var(--navy); cursor: pointer;
+  width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: var(--navy-soft); border: none; border-radius: var(--r-btn);
+  padding: 12px 14px; margin-top: 12px;
+  font-size: 14px; font-weight: 700; color: var(--navy); cursor: pointer;
 }
+.step-expand:active { background: #e2ebf5; }
 .step-expand__chev { font-size: 16px; line-height: 1; transition: transform 0.2s ease; }
 .step-expand[aria-expanded="true"] .step-expand__chev { transform: rotate(90deg); }
 .step-expanded { margin-top: 8px; }

@@ -373,7 +373,19 @@ app.post('/escalation', (req, res) => {
 });
 
 // Serve the vanilla web client (an immediately-runnable demo of the same flow).
-app.use(express.static(PUBLIC_DIR));
+// Code files use no-cache (revalidate every load via ETag) so a phone never runs
+// a stale app after a deploy; images/icons may cache for a day.
+app.use(
+  express.static(PUBLIC_DIR, {
+    setHeaders: (res, filePath) => {
+      if (/\.(html|js|css|json)$/i.test(filePath)) {
+        res.setHeader('Cache-Control', 'no-cache');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+      }
+    },
+  })
+);
 
 // MEASURE 7: safe catch-all error handler — never leak stack traces, internal
 // paths, or raw errors to the client. (Must be the last middleware registered.)
