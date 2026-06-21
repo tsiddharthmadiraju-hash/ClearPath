@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#1b4f72" />
 
-    <!-- ===================== SEO ===================== -->
     <title>ClearPath — Understand Any Document in Plain Language</title>
     <meta
       name="description"
@@ -20,7 +19,6 @@
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <link rel="canonical" href="https://clearpath-dtrg.onrender.com/" />
 
-    <!-- ===================== Open Graph (Facebook, LinkedIn, iMessage…) ===================== -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="ClearPath" />
     <meta property="og:title" content="ClearPath — Understand any document" />
@@ -35,7 +33,6 @@
     <meta property="og:image:alt" content="ClearPath — understand any document in plain language" />
     <meta property="og:locale" content="en_US" />
 
-    <!-- ===================== Twitter / X Card ===================== -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="ClearPath — Understand any document" />
     <meta
@@ -45,7 +42,6 @@
     <meta name="twitter:image" content="https://clearpath-dtrg.onrender.com/og-image.png?v=2" />
     <meta name="twitter:image:alt" content="ClearPath — understand any document in plain language" />
 
-    <!-- ===================== Icons / PWA ===================== -->
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
@@ -54,7 +50,6 @@
     <meta name="apple-mobile-web-app-title" content="ClearPath" />
     <meta name="mobile-web-app-capable" content="yes" />
 
-    <!-- ===================== Structured data ===================== -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -71,14 +66,27 @@
       }
     </script>
 
-    <link rel="stylesheet" href="./styles.css?v=4" />
+    <style>
+      #boot-splash{position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#1b4f72,#0f3149);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,Roboto,sans-serif;text-align:center;padding:0 32px}
+      #boot-splash .bs-name{font-family:Georgia,'Times New Roman',serif;font-size:30px;font-weight:700}
+      #boot-splash .bs-spin{width:34px;height:34px;border-radius:50%;border:3px solid rgba(255,255,255,.25);border-top-color:#f59e0b;animation:bs-rot .9s linear infinite}
+      #boot-splash .bs-msg{font-size:15px;font-weight:600;color:#eaf2fa}
+      #boot-splash .bs-sub{font-size:13px;color:#a9c4dd;max-width:300px;line-height:1.5}
+      @keyframes bs-rot{to{transform:rotate(360deg)}}
+    </style>
+    <link rel="stylesheet" href="./styles.css?v=5" />
   </head>
   <body>
+    <div id="boot-splash">
+      <div class="bs-name">ClearPath</div>
+      <div class="bs-spin"></div>
+      <div class="bs-msg">Loading…</div>
+      <div class="bs-sub">This can take up to a minute the first time the site wakes up.</div>
+    </div>
     <div class="phone" id="phone">
-      <!-- one-time language detection banner -->
+
       <div id="lang-banner" class="lang-banner" hidden></div>
 
-      <!-- ===================== HOME ===================== -->
       <section id="screen-home" class="screen is-active">
         <div class="scroll">
           <header class="appbar">
@@ -89,7 +97,7 @@
               <span class="lang-btn__chev">⌄</span>
             </button>
           </header>
-          <!-- one-time legal banner (FIX 10) -->
+
           <div id="legal-banner" class="legal-banner" hidden>
             <span class="legal-banner__text">ClearPath explains documents. It does not give legal advice. Free help is always one tap away.</span>
             <button class="legal-banner__close" data-action="dismiss-legal" aria-label="Dismiss">✕</button>
@@ -141,7 +149,6 @@
         </div>
       </section>
 
-      <!-- ===================== TEXT INPUT ===================== -->
       <section id="screen-text" class="screen">
         <div class="scroll">
           <header class="subbar">
@@ -154,7 +161,6 @@
         </div>
       </section>
 
-      <!-- ===================== PROCESSING ===================== -->
       <section id="screen-processing" class="screen">
         <div class="processing">
           <div class="pulse"></div>
@@ -164,7 +170,6 @@
         </div>
       </section>
 
-      <!-- ===================== RESULTS ===================== -->
       <section id="screen-results" class="screen">
         <div class="scroll" id="results-scroll">
           <div class="results-top">
@@ -179,14 +184,12 @@
         </div>
       </section>
 
-      <!-- ===================== HISTORY ===================== -->
       <section id="screen-history" class="screen">
         <div class="scroll" id="history-scroll">
           <div id="history-content"></div>
         </div>
       </section>
 
-      <!-- ===================== HELP ===================== -->
       <section id="screen-help" class="screen">
         <div class="scroll">
           <header class="appbar"><span class="appbar__name" data-i18n="nav_help">Help</span></header>
@@ -198,7 +201,6 @@
         </div>
       </section>
 
-      <!-- ===================== BOTTOM NAV ===================== -->
       <nav class="tabbar" id="tabbar">
         <button class="tab is-active" data-tab="home"><span class="tab__label" data-i18n="nav_home">Home</span></button>
         <button class="tab" data-tab="history"><span class="tab__label" data-i18n="nav_history">History</span><span class="tab__badge" id="history-badge" hidden>0</span></button>
@@ -206,7 +208,6 @@
       </nav>
     </div>
 
-    <!-- ===================== ESCALATION SHEET ===================== -->
     <div id="escalation" class="sheet-overlay" hidden>
       <div class="sheet">
         <div class="sheet__handle"></div>
@@ -218,7 +219,6 @@
       </div>
     </div>
 
-    <!-- ===================== LANGUAGE SHEET ===================== -->
     <div id="lang-sheet" class="sheet-overlay" hidden>
       <div class="sheet">
         <div class="sheet__handle"></div>
@@ -229,13 +229,11 @@
       </div>
     </div>
 
-    <!-- ===================== CAMERA ===================== -->
     <div id="camera-modal" class="camera-modal" hidden>
       <video id="cam-video" class="camera-video" autoplay playsinline muted></video>
       <canvas id="cam-canvas" hidden></canvas>
       <img id="cam-preview" class="camera-preview" alt="" hidden />
 
-      <!-- live capture overlay -->
       <div id="cam-live" class="camera-layer">
         <button class="camera-cancel" data-action="cam-cancel" aria-label="Cancel">‹ <span data-i18n="cancel">Cancel</span></button>
         <div class="camera-frame"><span></span><span></span><span></span><span></span></div>
@@ -243,7 +241,6 @@
         <button class="camera-shutter" data-action="cam-capture" aria-label="Capture"></button>
       </div>
 
-      <!-- after-capture review -->
       <div id="cam-review" class="camera-layer camera-layer--review" hidden>
         <p class="camera-hint" data-i18n="camera_review">Is the whole document clear and readable?</p>
         <div class="camera-actions">
@@ -252,7 +249,6 @@
         </div>
       </div>
 
-      <!-- permission denied / unavailable -->
       <div id="cam-denied" class="camera-denied" hidden>
         <p class="camera-denied__text" data-i18n="camera_denied">Camera access is needed to photograph your document. You can also upload a PDF or paste the text instead.</p>
         <div class="camera-actions camera-actions--stack">
@@ -263,7 +259,6 @@
       </div>
     </div>
 
-    <!-- ===================== DEV CHECKLIST (hidden, passcode-gated) ===================== -->
     <div id="dev-overlay" class="sheet-overlay" hidden>
       <div class="sheet dev-sheet">
         <button class="sheet__close" data-action="dev-close" aria-label="Close">✕</button>
@@ -297,13 +292,12 @@
       </div>
     </div>
 
-    <!-- hidden file pickers -->
     <input id="file-camera" type="file" accept="image/*" capture="environment" hidden />
     <input id="file-upload" type="file" accept="image/*,application/pdf" hidden />
 
-    <script src="./translations.js?v=4"></script>
-    <script src="./examples.js?v=4"></script>
-    <script src="./history.js?v=4"></script>
-    <script src="./app.js?v=4"></script>
+    <script src="./translations.js?v=5"></script>
+    <script src="./examples.js?v=5"></script>
+    <script src="./history.js?v=5"></script>
+    <script src="./app.js?v=5"></script>
   </body>
 </html>

@@ -1,11 +1,3 @@
-/**
- * Deterministic mock analyses so ClearPath demos end-to-end with NO API key.
- * Set CLEARPATH_MOCK=1 (or simply omit ANTHROPIC_API_KEY) to use these.
- *
- * Each entry mirrors exactly the JSON contract Claude returns, so the same
- * frontend code renders mock and live responses identically. They double as the
- * five synthetic demo documents referenced in the build plan.
- */
 
 export const EVICTION = {
   document_type: 'Eviction Notice',
@@ -338,10 +330,6 @@ export const MOCKS = {
   low: LOW_CONFIDENCE,
 };
 
-/**
- * Pick a mock by keyword-matching the document text. Used only in MOCK mode so
- * the example chips and pasted sample text return a sensible analysis offline.
- */
 export function pickMock(text = '') {
   const t = String(text).toLowerCase();
   if (!t.trim()) return LOW_CONFIDENCE;
@@ -355,6 +343,5 @@ export function pickMock(text = '') {
     return SCHOOL;
   if (/(shutoff|shut off|disconnect|electric|utility|past due|power)/.test(t))
     return UTILITY;
-  // Recognizable enough to attempt, but nothing matched cleanly.
   return t.length < 40 ? LOW_CONFIDENCE : EVICTION;
 }

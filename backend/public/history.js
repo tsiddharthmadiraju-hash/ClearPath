@@ -1,9 +1,3 @@
-/* ClearPath history service (web).
- *
- * PRIVACY: stores ONLY the analysis result on this device (localStorage). It
- * never stores the original document text or image. Mirrors the Expo
- * historyService API so both clients behave the same.
- */
 (function () {
   const KEY = 'cp_history';
   const MAX_ITEMS = 10;
@@ -15,7 +9,7 @@
       const parsed = JSON.parse(raw);
       return Array.isArray(parsed) ? parsed : [];
     } catch {
-      return []; // corrupted storage — degrade gracefully
+      return [];
     }
   }
 
@@ -76,8 +70,6 @@
     persist(items);
   }
 
-  // Cache a translated copy of an item's result, keyed by language display name,
-  // so re-viewing it in that language later is instant and free.
   function setTranslation(id, langName, result) {
     if (!id || !langName || !result) return;
     const items = load();

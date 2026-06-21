@@ -1,12 +1,3 @@
-/**
- * Demo safety net: complete, high-quality, pre-built responses for the five
- * example documents. When a demo chip is tapped the client sends { demoType },
- * and the server returns the matching response INSTANTLY without calling Claude.
- *
- * These bypass the API entirely so a live demo or recorded video can never fail
- * on a network hiccup, rate limit, or model variance. Phone numbers here are the
- * verified national numbers from resources.js.
- */
 
 const DISCLAIMER =
   'ClearPath explains documents to help you understand your situation. It does not provide legal advice. If your situation is urgent, call 211 now.';
@@ -127,7 +118,6 @@ export const DEMO_RESPONSES = {
   },
 };
 
-/** Return a deep copy of a pre-built demo response, or null if no match. */
 export function getDemoResponse(demoType) {
   const key = String(demoType || '').toLowerCase().trim();
   const found = DEMO_RESPONSES[key];

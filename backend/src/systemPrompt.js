@@ -1,11 +1,3 @@
-/**
- * The ClearPath system prompt — the core technical asset of the product.
- *
- * It instructs Claude to return ONLY a structured JSON object with exactly the
- * fields the UI renders. This structured output is what makes ClearPath a real
- * AI application rather than a chatbot wrapper. Kept verbatim from the product
- * plan (v1.0) so the submission and the running code stay in lock-step.
- */
 export const SYSTEM_PROMPT = `You are ClearPath, a community support AI assistant. Your job is to help people who have received a confusing legal or government document understand what it means and what to do next. The person reading your output may be under significant stress and may have limited legal knowledge. They need to act quickly. Analyze the document and return ONLY a valid JSON object with exactly these fields:
 {
   "document_type": "plain English name for what kind of document this is",
@@ -35,11 +27,6 @@ export const SYSTEM_PROMPT = `You are ClearPath, a community support AI assistan
 }
 If you cannot determine what the document is or its content is ambiguous, set confidence to low and explain in plain_explanation. Return ONLY the JSON object. No preamble, no explanation, no markdown formatting.`;
 
-/**
- * Language instructions appended to the system prompt so Claude returns every
- * text field in the user's chosen language, while leaving names / phones / URLs
- * untouched. The document itself may be in any language.
- */
 export function languageInstructions(languageName) {
   const lang = languageName && languageName !== 'English' ? languageName : 'English';
   if (lang === 'English') {
@@ -53,11 +40,6 @@ If the language uses non-Latin script such as Arabic, Chinese, Hindi, Korean, Ru
 The document you are analyzing may be written in any language. Analyze it regardless of what language it is in. Always return your full response in ${lang} regardless of the document's original language.`;
 }
 
-/**
- * Optional location hint appended to the user turn (never to the system prompt,
- * so the cached prefix stays stable). Keeps resource recommendations relevant
- * without storing anything about the user.
- */
 export function locationHint(location) {
   if (!location || typeof location !== 'string') return '';
   const clean = location.trim().slice(0, 120);

@@ -1,6 +1,3 @@
-/* ClearPath translations — 15 languages. Shared shape with the Expo app.
-   Each language: metadata (native/english/rtl/font) + the static UI strings.
-   Document analysis content itself is translated live by Claude (see backend). */
 
 window.CP_LANGUAGES = [
   { code: 'en', native: 'English', english: 'English', rtl: false, font: null },
@@ -386,8 +383,6 @@ window.CP_STRINGS = {
 
 window.CP_LANG_BY_CODE = Object.fromEntries(window.CP_LANGUAGES.map((l) => [l.code, l]));
 
-/* Supplementary strings (camera + history). Merged into every language with an
-   English fallback baked in, without overwriting any existing translation. */
 (function () {
   const EXTRA = {
     en: {

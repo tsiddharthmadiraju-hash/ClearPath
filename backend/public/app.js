@@ -1,4 +1,3 @@
-/* ClearPath web client — multilingual, icon-free native app shell. */
 
 const PALETTE = {
   red: { bg: '#FEE2E2', text: '#991B1B' },
@@ -20,10 +19,7 @@ let currentScreen = 'home';
 let lastAnalysis = null;
 let lastDocumentType = null;
 let lastHistoryMeta = null;
-let resultLang = 'English'; // the language the CURRENTLY DISPLAYED result is in
-// The untranslated source result + its language. We always translate FROM this
-// (never from an already-translated copy) so quality never degrades, and so
-// switching back to the original language is instant.
+let resultLang = 'English';
 let lastOriginalAnalysis = null;
 let lastOriginalLang = 'English';
 let processingTimers = [];
@@ -32,7 +28,6 @@ const loadedFonts = new Set();
 const el = (id) => document.getElementById(id);
 const t = (key) => (STRINGS[lang] && STRINGS[lang][key]) || STRINGS.en[key] || key;
 
-/* ---------------- language / i18n ---------------- */
 function loadFont(fontName) {
   if (!fontName || loadedFonts.has(fontName)) return;
   loadedFonts.add(fontName);
@@ -73,28 +68,23 @@ function setLanguage(code, persist) {
   }
   updateLangChecks();
   applyI18n();
-  // When viewing a result, re-translate its CONTENT into the new language too.
   if (currentScreen === 'results') translateCurrent();
-  // On the history list, re-render so labels localize and cards translate.
   else if (currentScreen === 'history') renderHistory();
 }
 
-/** Show the displayed result in the active language (translating if needed). */
 async function translateCurrent() {
   const target = (BYCODE[lang] || BYCODE.en).english;
   const source = lastOriginalAnalysis;
   if (!source) return;
-  if (target === resultLang) return; // already showing this language
+  if (target === resultLang) return;
   const meta = lastHistoryMeta;
 
-  // Back to the original language → show the untranslated source, no network.
   if (target === lastOriginalLang) {
     resultLang = target;
     renderResults(source, meta);
     return;
   }
 
-  // Reuse a cached translation (history items remember each language).
   if (meta && meta.id && window.CP_History) {
     const it = window.CP_History.getHistoryItem(meta.id);
     if (it && it.translations && it.translations[target]) {
@@ -109,7 +99,6 @@ async function translateCurrent() {
     const res = await fetch('/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      // Always translate FROM the original so we never translate a translation.
       body: JSON.stringify({ analysis: source, language: target }),
     });
     const data = await res.json();
@@ -119,7 +108,7 @@ async function translateCurrent() {
       if (meta && meta.id && window.CP_History) window.CP_History.setTranslation(meta.id, target, data);
       renderResults(data, meta);
     } else {
-      show('results'); // chrome already re-labeled; keep existing content
+      show('results');
     }
   } catch {
     clearProcessing();
@@ -195,14 +184,13 @@ function maybeShowLegalBanner() {
   let dismissed = false;
   try { dismissed = localStorage.getItem(LEGAL_KEY) === '1'; } catch {}
   if (dismissed) return;
-  try { localStorage.setItem(LEGAL_KEY, '1'); } catch {} // one-time only
+  try { localStorage.setItem(LEGAL_KEY, '1'); } catch {}
   const b = el('legal-banner');
   if (!b) return;
   b.hidden = false;
   setTimeout(() => { b.hidden = true; }, 5000);
 }
 
-/* ---------------- navigation ---------------- */
 const SCREENS = ['home', 'text', 'processing', 'results', 'history', 'help'];
 function show(name, activeTab) {
   currentScreen = name;
@@ -216,7 +204,6 @@ function show(name, activeTab) {
   if (scroll) scroll.scrollTop = 0;
 }
 
-/* ---------------- processing ---------------- */
 function startProcessing(subKey) {
   show('processing');
   clearProcessing();
@@ -236,9 +223,7 @@ function clearProcessing() {
   processingTimers = [];
 }
 
-/* ---------------- API ---------------- */
 async function analyze(payload) {
-  // Offline: don't attempt a network call — guide the user to their History.
   if (!navigator.onLine && !payload.demoType) {
     showError(t('offline_analyze'));
     return;
@@ -263,7 +248,6 @@ async function analyze(payload) {
     lastOriginalAnalysis = data;
     lastOriginalLang = resultLang;
     renderResults(data);
-    // Save real analyses to local history (never demo chips, never the document).
     if (!payload.demoType && window.CP_History) {
       const inputType = payload.inputMethod === 'camera' ? 'camera' : payload.inputMethod === 'pdf' ? 'upload' : 'paste';
       window.CP_History.saveAnalysis(data, inputType, langName);
@@ -287,7 +271,6 @@ function showError(message) {
   });
 }
 
-/* ---------------- render helpers ---------------- */
 function esc(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -420,10 +403,8 @@ function buildResults(analysis, historyMeta) {
     const key = 'step_' + (Number(card.dataset.step) + 1);
     if (historyMeta && historyMeta.checkedSteps && historyMeta.checkedSteps[key]) card.classList.add('is-done');
     card.addEventListener('click', (e) => {
-      // Clicks on the "explain more" button/panel must not toggle the checkmark.
       if (e.target.closest('.step-expand') || e.target.closest('.step-expanded')) return;
       const done = card.classList.toggle('is-done');
-      // Persist checked state back to this history item (Maria's court-date use case).
       if (lastHistoryMeta && window.CP_History) window.CP_History.setChecked(lastHistoryMeta.id, key, done);
     });
   });
@@ -440,10 +421,6 @@ function buildResults(analysis, historyMeta) {
   });
 }
 
-/**
- * "Explain this in more detail" — expand one checklist step into simpler
- * sub-steps via /expand. Result is cached on the element so re-opening is free.
- */
 async function toggleExpand(btn) {
   const i = Number(btn.dataset.expand);
   const box = el('step-exp-' + i);
@@ -452,7 +429,7 @@ async function toggleExpand(btn) {
   if (open) { btn.setAttribute('aria-expanded', 'false'); box.hidden = true; return; }
   btn.setAttribute('aria-expanded', 'true');
   box.hidden = false;
-  if (box.dataset.loaded === '1') return; // already fetched — just re-open
+  if (box.dataset.loaded === '1') return;
   const step = ((lastAnalysis && lastAnalysis.action_checklist) || [])[i] || {};
   if (!step.action) { box.hidden = true; return; }
   if (!navigator.onLine) { box.innerHTML = `<p class="step-expanded__status">${esc(t('offline_analyze'))}</p>`; return; }
@@ -478,7 +455,6 @@ function renderResults(analysis, historyMeta) {
   show('results');
 }
 
-/* ---------------- escalation ---------------- */
 async function openEscalation() {
   const overlay = el('escalation');
   const list = el('escalation-resources');
@@ -510,7 +486,6 @@ async function openEscalation() {
     .join('');
 }
 
-/* ---------------- files ---------------- */
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -523,9 +498,6 @@ async function handleFile(file) {
   if (!file) return;
   try {
     const base64 = await fileToBase64(file);
-    // Detect PDFs by MIME type, file extension, OR base64 magic bytes (%PDF →
-    // "JVBER"). Mobile pickers often give a PDF an empty/octet-stream type, so
-    // type alone is not enough — without this they'd be sent as a broken image.
     const isPdf =
       file.type === 'application/pdf' ||
       /\.pdf$/i.test(file.name || '') ||
@@ -537,7 +509,6 @@ async function handleFile(file) {
   }
 }
 
-/* ---------------- history ---------------- */
 function updateHistoryBadge() {
   const badge = el('history-badge');
   if (!badge) return;
@@ -550,7 +521,6 @@ function confDotClass(c) { return c === 'high' ? 'conf-dot--high' : c === 'mediu
 function histConfLabel(c) { return c === 'high' ? t('confident') : c === 'medium' ? t('review_recommended') : t('verify_expert'); }
 function inputTypeLabel(it) { return it === 'camera' ? t('take_photo') : it === 'upload' ? t('upload_doc') : t('paste_text'); }
 
-/** A history card's type + preview in the active language (cached if available). */
 function histDisplay(it, target) {
   let src = it.full_result;
   if (target !== (it.language || 'English') && it.translations && it.translations[target]) {
@@ -561,8 +531,6 @@ function histDisplay(it, target) {
   return { type, preview: ex.length > 120 ? ex.slice(0, 120) + '…' : ex };
 }
 
-// Translate one stored history item into `target` once, cache it, and refresh the
-// list. Guarded + cached so a language switch costs at most one call per item.
 const _histTranslating = {};
 async function translateHistoryItem(it, target) {
   if (!it || target === (it.language || 'English')) return;
@@ -583,7 +551,6 @@ async function translateHistoryItem(it, target) {
       if (currentScreen === 'history' && (BYCODE[lang] || BYCODE.en).english === target) renderHistory();
     }
   } catch {
-    /* leave the original text in place */
   } finally {
     delete _histTranslating[key];
   }
@@ -630,7 +597,6 @@ function renderHistory() {
     </div>
     <p class="history-sub"><span aria-hidden="true">🔒︎</span>${esc(t('history_stored_local'))}</p>
     ${cards}`;
-  // Localize cards not yet available in the active language (cached afterwards).
   items.forEach((it) => translateHistoryItem(it, target));
 }
 
@@ -641,7 +607,6 @@ function openHistoryItem(id) {
   lastOriginalLang = item.language || 'English';
   const meta = { id: item.id, date_analyzed: item.date_analyzed, checkedSteps: item.checkedSteps || {} };
   const target = (BYCODE[lang] || BYCODE.en).english;
-  // Already have this language (original or cached translation)? Show it directly.
   const cached =
     target === lastOriginalLang
       ? item.full_result
@@ -653,7 +618,6 @@ function openHistoryItem(id) {
     renderResults(cached, meta);
     return;
   }
-  // Otherwise show the original immediately, then translate into the app language.
   resultLang = lastOriginalLang;
   renderResults(item.full_result, meta);
   translateCurrent();
@@ -679,7 +643,6 @@ function confirmClearHistory() {
   }
 }
 
-/* ---------------- dev checklist (passcode-gated) ---------------- */
 let logoTaps = 0;
 let logoTimer = null;
 let devCode = '';
@@ -720,7 +683,7 @@ function checkDevCode() {
     el('dev-pass-msg').hidden = false;
     devCode = '';
     updateDevDots();
-    setTimeout(closeDev, 900); // show "Incorrect" then close
+    setTimeout(closeDev, 900);
   }
 }
 
@@ -772,14 +735,12 @@ function resetDemo() {
   show('home');
 }
 
-/* ---------------- camera ---------------- */
 let camStream = null;
 let camDataUrl = null;
 
 async function openCamera() {
   const modal = el('camera-modal');
   const supported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext;
-  // No live camera available (e.g. insecure origin) — fall back to the OS picker.
   if (!supported) { el('file-camera').click(); return; }
   modal.hidden = false;
   el('cam-denied').hidden = true;
@@ -788,9 +749,6 @@ async function openCamera() {
   el('cam-live').hidden = false;
   el('cam-video').hidden = false;
   try {
-    // Request the rear camera at high resolution so document text is sharp
-    // enough to read. `ideal` lets the browser pick the closest it supports
-    // (so it never over-constrains and fails on lower-end cameras).
     camStream = await navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: { ideal: 'environment' },
@@ -854,7 +812,6 @@ function closeCamera() {
   camDataUrl = null;
 }
 
-/* ---------------- events ---------------- */
 document.addEventListener('click', (e) => {
   const action = e.target.closest('[data-action]')?.dataset.action;
   const example = e.target.closest('[data-example]')?.dataset.example;
@@ -872,8 +829,6 @@ document.addEventListener('click', (e) => {
     return;
   }
   if (example) {
-    // English: instant pre-built demo (free, never fails). Other languages: run the
-    // example through live Claude so the content is actually translated, not just the UI.
     const exText = window.CLEARPATH_EXAMPLES && window.CLEARPATH_EXAMPLES[example];
     if (lang === 'en' || !exText) analyze({ demoType: example, inputMethod: 'demo' });
     else analyze({ text: exText, inputMethod: 'text' });
@@ -921,11 +876,9 @@ el('file-upload').addEventListener('change', (e) => handleFile(e.target.files[0]
 el('escalation').addEventListener('click', (e) => { if (e.target.id === 'escalation') e.target.hidden = true; });
 el('lang-sheet').addEventListener('click', (e) => { if (e.target.id === 'lang-sheet') e.target.hidden = true; });
 el('dev-overlay').addEventListener('click', (e) => { if (e.target.id === 'dev-overlay') closeDev(); });
-// Hidden developer access: tap the ClearPath logo 5 times quickly.
 const brandEl = document.querySelector('#screen-home .appbar__name');
 if (brandEl) brandEl.addEventListener('click', onLogoTap);
 
-/* ---------------- init ---------------- */
 function init() {
   let saved = null;
   try { saved = localStorage.getItem(STORAGE_KEY); } catch {}
@@ -938,7 +891,6 @@ function init() {
   maybeShowLegalBanner();
   if (!saved) maybeShowBanner(detected);
 
-  // Deep link: /?example=eviction&lang=es
   const params = new URLSearchParams(location.search);
   const dl = params.get('lang');
   if (dl && BYCODE[dl]) setLanguage(dl, true);
@@ -949,6 +901,8 @@ function init() {
   }
 
   if (location.hash === '#lang') openLangSheet();
+  const splash = el('boot-splash');
+  if (splash) splash.remove();
 }
 
 init();

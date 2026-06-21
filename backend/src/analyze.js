@@ -2,15 +2,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { SYSTEM_PROMPT, locationHint, languageInstructions } from './systemPrompt.js';
 import { pickMock } from './mockData.js';
 
-/**
- * claude-haiku-4-5 — fastest + lowest cost, reliable structured JSON. Chosen for
- * snappy demos and cheap per-call pricing. Override with CLEARPATH_MODEL to swap
- * (e.g. claude-sonnet-4-6 for harder documents).
- */
 const MODEL = process.env.CLEARPATH_MODEL || 'claude-haiku-4-5';
-// Reading text out of a PHOTO is harder than parsing typed text, so the image
-// path uses a stronger vision model by default for more accurate OCR. Override
-// with CLEARPATH_VISION_MODEL (set it to claude-haiku-4-5 to minimize image cost).
 const VISION_MODEL = process.env.CLEARPATH_VISION_MODEL || 'claude-sonnet-4-6';
 const MAX_TOKENS = 2000;
 
@@ -21,14 +13,10 @@ export const MOCK_MODE = forceMock || !hasKey;
 
 let client = null;
 function getClient() {
-  if (!client) client = new Anthropic(); // reads ANTHROPIC_API_KEY from env
+  if (!client) client = new Anthropic();
   return client;
 }
 
-/**
- * Pull a JSON object out of the model's text, tolerating accidental code fences
- * or a stray sentence even though the prompt asks for pure JSON.
- */
 function extractJson(text) {
   if (!text) throw new Error('Empty model response');
   const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
@@ -45,30 +33,15 @@ function extractJson(text) {
   }
 }
 
-/**
- * Analyze a document.
- *
- * @param {object} input
- * @param {string} [input.text]      Pasted or PDF-extracted document text
- * @param {string} [input.image]     base64 image data (no data: prefix)
- * @param {string} [input.mediaType] e.g. image/jpeg, image/png
- * @param {string} [input.location]  optional location hint for local resources
- * @param {string} [input.language]  user's preferred output language (display name)
- * @returns {Promise<{ raw: object, mode: 'mock'|'live', model: string }>}
- */
 export async function analyzeDocument({ text, image, mediaType, location, language } = {}) {
   const hint = locationHint(location);
 
   if (MOCK_MODE) {
-    // No key configured — return a deterministic English sample so the full UX
-    // still works offline. Live mode (with a key) returns the chosen language.
     const basis = text || (image ? 'image of a document' : '');
     return { raw: pickMock(basis), mode: 'mock', model: 'mock' };
   }
 
   const system = SYSTEM_PROMPT + languageInstructions(language);
-  // Photos need stronger OCR than typed text, so route image input to the
-  // vision model and keep the fast/cheap model for pasted or PDF text.
   const model = image ? VISION_MODEL : MODEL;
 
   const userContent = [];
@@ -110,14 +83,6 @@ export async function analyzeDocument({ text, image, mediaType, location, langua
   return { raw, mode: 'live', model };
 }
 
-/**
- * Re-translate an EXISTING analysis result into a new language. We never store
- * the original document, so when the user switches languages we translate the
- * result itself rather than re-analyzing. Names, phone numbers, URLs, and the
- * urgency/confidence enums are preserved; only human-readable text changes.
- *
- * @returns {Promise<{ raw: object, mode: 'mock'|'live', model: string }>}
- */
 export async function translateAnalysis(analysis, language) {
   if (MOCK_MODE || !language) {
     return { raw: analysis, mode: MOCK_MODE ? 'mock' : 'live', model: MOCK_MODE ? 'mock' : MODEL };
@@ -138,13 +103,6 @@ export async function translateAnalysis(analysis, language) {
   return { raw: extractJson(textBlock ? textBlock.text : ''), mode: 'live', model: MODEL };
 }
 
-/**
- * Break ONE action-checklist step into smaller, simpler sub-steps for a user who
- * is stuck on it. Uses the fast/cheap text model — this is plain-language
- * simplification, not analysis.
- *
- * @returns {Promise<{ steps: string[], mode: 'mock'|'live', model: string }>}
- */
 export async function expandStep({ action, detail, documentType, language } = {}) {
   const cleanAction = (typeof action === 'string' ? action : '').trim().slice(0, 600);
   if (!cleanAction) return { steps: [], mode: MOCK_MODE ? 'mock' : 'live', model: 'none' };

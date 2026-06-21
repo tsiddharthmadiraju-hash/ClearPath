@@ -1,9 +1,3 @@
-/**
- * Validate and normalize the JSON object Claude returns so the frontend can
- * trust its shape. The model is instructed to return clean JSON, but we never
- * render un-validated model output to a stressed user — if anything is missing
- * or malformed we degrade safely (and to LOW confidence, never false high).
- */
 
 import { getResourcesForDocumentType, UNIVERSAL_211 } from './resources.js';
 
@@ -74,20 +68,11 @@ function nameKey(name) {
   return String(name || '').toLowerCase().replace(/[^a-z0-9]/g, '');
 }
 
-/**
- * Responsible-AI rule: the verified 211 helpline is ALWAYS the first resource so
- * the user always has a human fallback with a phone number that works. We then
- * keep Claude's (often location-specific) resources and supplement them with
- * verified national organizations for the document type — and if Claude returned
- * too few, the verified database fully backs up the list. Capped so it stays
- * scannable for a stressed reader.
- */
 function mergeWithVerified(claudeResources, documentType) {
-  const verified = getResourcesForDocumentType(documentType); // [211, ...category]
+  const verified = getResourcesForDocumentType(documentType);
   const result = [UNIVERSAL_211];
   const seen = new Set([nameKey(UNIVERSAL_211.name)]);
 
-  // Keep Claude's resources (dropping any duplicate 211 — the verified one wins).
   for (const r of claudeResources) {
     if (/\b211\b/.test(r.name)) continue;
     const key = nameKey(r.name);
@@ -96,7 +81,6 @@ function mergeWithVerified(claudeResources, documentType) {
     result.push(r);
   }
 
-  // Supplement with verified, real-phone-number national orgs not already present.
   for (const v of verified.slice(1)) {
     if (result.length >= 5) break;
     const key = nameKey(v.name);
@@ -124,8 +108,6 @@ export function validateAnalysis(raw) {
   const documentType = str(obj.document_type, 'Unrecognized document');
   const plainExplanation = str(obj.plain_explanation);
 
-  // If the model gave us nothing meaningful, force low confidence — a wrong
-  // answer delivered with false confidence is worse than an honest "unsure".
   if (!plainExplanation || (checklist.length === 0 && resources.length === 0)) {
     confidence = 'low';
     issues.push('explanation or actionable content missing; forced low confidence');

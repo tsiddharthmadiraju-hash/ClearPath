@@ -1,15 +1,4 @@
-/**
- * Verified, real-world resource database.
- *
- * These are nationally-reachable organizations with stable, verified phone
- * numbers. They are used to (a) guarantee every result includes 211 first and
- * (b) supplement or back up the resources Claude returns so a stressed user
- * always has at least one phone number that actually works.
- *
- * Keep this list conservative and verified. When in doubt, 211 routes anywhere.
- */
 
-/** Universal — always included first, for every document type. */
 export const UNIVERSAL_211 = {
   name: '211 Helpline',
   type: 'Community resource hotline',
@@ -21,7 +10,6 @@ export const UNIVERSAL_211 = {
     'Hi, I received an official document and I need help understanding my options. Can you connect me with someone who can help?',
 };
 
-/** Category-specific verified resources, keyed by document topic. */
 const CATEGORIES = {
   housing: [
     {
@@ -113,7 +101,6 @@ const CATEGORIES = {
   ],
 };
 
-/** Map a free-text document type string to one of the categories above. */
 function categoryForDocumentType(documentType) {
   const t = String(documentType || '').toLowerCase();
   if (/evict|housing|tenant|landlord|vacate|\brent\b|lease|foreclosur|detainer/.test(t)) return 'housing';
@@ -124,11 +111,6 @@ function categoryForDocumentType(documentType) {
   return null;
 }
 
-/**
- * Returns verified resources for a document type, ALWAYS with 211 first.
- * @param {string} documentType
- * @returns {Array<object>}
- */
 export function getResourcesForDocumentType(documentType) {
   const category = categoryForDocumentType(documentType);
   const specific = category ? CATEGORIES[category] : [];

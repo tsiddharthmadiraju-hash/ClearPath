@@ -1,6 +1,3 @@
-/* Synthetic demo documents (no real personal data). Clicking an example chip
-   sends this real text to /analyze — in LIVE mode it genuinely exercises Claude;
-   in MOCK mode it keyword-matches to the right sample analysis. */
 window.CLEARPATH_EXAMPLES = {
   eviction: `NOTICE TO VACATE
 Date: June 13, 2026
