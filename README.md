@@ -2,10 +2,13 @@
 
 **Understand any document in seconds.**
 
-ClearPath turns confusing legal and government documents into a plain-language
-explanation, a prioritized action checklist with deadlines, direct connections
-to local support resources, and an honest confidence indicator — built for
-people under stress who cannot afford to misunderstand what they received.
+**▶ Live demo: https://clearpath-dtrg.onrender.com**
+
+ClearPath turns any confusing document — forms, letters, notices, and bills —
+into a plain-language explanation, a prioritized action checklist with deadlines,
+direct connections to local support resources, and an honest confidence indicator
+— built for people under stress who cannot afford to misunderstand what they
+received. It works from a photo, a PDF, or pasted text, in **14 languages**.
 
 > Built for the USAII Global AI Hackathon 2026 — Challenge 1A: Crisis-to-Action
 > Translator. This repo implements the product described in `ClearPath_Product_Plan.pdf`.
@@ -52,8 +55,10 @@ cp .env.example .env
 npm start
 ```
 
-Now every document is analyzed live by Claude (`claude-sonnet-4-6` by default —
-override with `CLEARPATH_MODEL`). `GET /health` shows the active mode and model.
+Now every document is analyzed live by Claude. Text and PDFs use
+`claude-haiku-4-5` (fast + low cost); photos use `claude-sonnet-4-6` for stronger
+OCR. Override with `CLEARPATH_MODEL` / `CLEARPATH_VISION_MODEL`. `GET /health`
+shows the active mode and model.
 
 ---
 
@@ -99,6 +104,15 @@ Returns the validated four-part analysis:
   "disclaimer": "…"
 }
 ```
+
+### `POST /translate`
+Re-translates an existing analysis into another language (used when the user
+switches languages). Body: `{ "analysis": {…}, "language": "Spanish" }`. Names,
+phone numbers, URLs, and enum values are preserved — only human-readable text changes.
+
+### `POST /expand`
+Breaks one checklist step into simpler, more detailed sub-steps for a user who is
+stuck. Body: `{ "action": "…", "detail": "…", "documentType": "…", "language": "…" }`.
 
 ### `POST /escalation`
 Records (anonymously) that a user asked for a real person and returns the human
@@ -156,15 +170,25 @@ wrong action. Three mitigations are built in:
 
 ## Tech stack
 
-| Layer        | Choice                              | Cost |
-|--------------|-------------------------------------|------|
-| Mobile app   | Expo (React Native + TypeScript)    | Free |
-| AI engine    | Claude API (`claude-sonnet-4-6`)    | Free tier |
-| Backend      | Express.js                          | Free tier |
-| PDF parsing  | pdf-parse                           | Free |
-| Logging (opt)| Supabase (anonymous)                | Free tier |
+| Layer        | Choice                                                              |
+|--------------|--------------------------------------------------------------------|
+| Mobile app   | Expo SDK 54 (React Native 0.81 + TypeScript)                       |
+| Web client   | Vanilla JS / HTML / CSS (no framework)                             |
+| AI engine    | Claude API — `claude-haiku-4-5` (text/PDF) + `claude-sonnet-4-6` (vision) |
+| Backend      | Node.js + Express 5                                                |
+| PDF parsing  | pdf-parse                                                          |
+| Hosting      | Render (behind Cloudflare), auto-deployed from GitHub             |
+| Uptime       | GitHub Actions keep-warm cron                                      |
+| Storage      | On-device only (localStorage / AsyncStorage) — **no server DB**   |
+| Logging (opt)| Supabase (anonymous, off by default)                              |
 
-Total cost: **$0**. Runs fully offline in MOCK mode.
+See **[TECH_STACK.md](TECH_STACK.md)** for the full breakdown. Runs fully offline in MOCK mode.
+
+### Deployment
+The backend (which also serves the web app) deploys to **Render** from the
+`render.yaml` Blueprint — pushing to `main` auto-deploys. A **GitHub Actions**
+workflow (`.github/workflows/keep-warm.yml`) pings `/health` every 10 minutes so
+the free tier doesn't cold-start.
 
 ---
 
