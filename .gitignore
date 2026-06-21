@@ -33,3 +33,6 @@ pnpm-debug.log*
 .vscode/
 .idea/
 *.swp
+
+# Render deploy config (kept local, not on GitHub)
+render.yaml
