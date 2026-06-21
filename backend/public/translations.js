@@ -404,6 +404,7 @@ window.CP_LANG_BY_CODE = Object.fromEntries(window.CP_LANGUAGES.map((l) => [l.co
       error_title: 'We could not complete that', generic_error: 'Something went wrong. Please try again, or call 211 for help.',
       explain_more: 'Explain this step in more detail', breaking_down: 'Breaking this into simple steps…',
       expand_failed: 'Could not break this down right now. Please try again.',
+      not_legal_advice: 'This is a plain-language explanation to help you understand your document — not legal advice.',
     },
     es: {
       cancel: 'Cancelar', camera_hint: 'Alinee su documento dentro del marco y toque Capturar',
@@ -419,6 +420,7 @@ window.CP_LANG_BY_CODE = Object.fromEntries(window.CP_LANGUAGES.map((l) => [l.co
       error_title: 'No pudimos completar eso', generic_error: 'Algo salió mal. Inténtelo de nuevo o llame al 211 para obtener ayuda.',
       explain_more: 'Explicar este paso con más detalle', breaking_down: 'Dividiéndolo en pasos sencillos…',
       expand_failed: 'No se pudo desglosar ahora. Inténtelo de nuevo.',
+      not_legal_advice: 'Esta es una explicación en lenguaje sencillo para ayudarle a entender su documento, no es asesoría legal.',
     },
     ar: {
       cancel: 'إلغاء', camera_hint: 'ضع المستند داخل الإطار واضغط على التقاط',
@@ -434,6 +436,7 @@ window.CP_LANG_BY_CODE = Object.fromEntries(window.CP_LANGUAGES.map((l) => [l.co
       error_title: 'تعذّر علينا إكمال ذلك', generic_error: 'حدث خطأ ما. يرجى المحاولة مرة أخرى، أو اتصل بـ 211 للحصول على المساعدة.',
       explain_more: 'اشرح هذه الخطوة بمزيد من التفصيل', breaking_down: 'جارٍ تقسيمها إلى خطوات بسيطة…',
       expand_failed: 'تعذّر تبسيط هذه الخطوة الآن. حاول مرة أخرى.',
+      not_legal_advice: 'هذا شرح بلغة بسيطة لمساعدتك على فهم مستندك، وليس استشارة قانونية.',
     },
   };
   if (window.CP_STRINGS) {

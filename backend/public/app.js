@@ -381,6 +381,7 @@ function buildResults(analysis, historyMeta) {
           ${cd ? `<span class="countdown">${esc(cd)}</span>` : ''}
         </div>
         ${steps}
+        <p class="step-disclaimer">${esc(t('not_legal_advice'))}</p>
       </div>`);
   }
 
