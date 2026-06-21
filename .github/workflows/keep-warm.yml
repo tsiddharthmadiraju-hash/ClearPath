@@ -1,0 +1,39 @@
+name: Keep Render warm
+
+# Render's free tier spins the service down after ~15 minutes of inactivity,
+# which gives the next visitor a ~30-60s cold-start 502. This workflow pings the
+# live /health endpoint every 10 minutes so the service stays awake.
+#
+# - Private repo note: each run bills ~1 GitHub Actions minute. The free tier is
+#   2,000 min/month, so this runs free for ~2 weeks — enough for a demo window.
+#   For a permanent always-on site, upgrade the Render service instead.
+# - Before a demo you can warm it instantly: Actions tab -> "Keep Render warm"
+#   -> "Run workflow".
+
+on:
+  schedule:
+    - cron: '*/10 * * * *' # every 10 minutes (GitHub schedules are best-effort)
+  workflow_dispatch: {} # manual "Run workflow" button
+
+# Don't pile up runs if one is slow; cancel the older one.
+concurrency:
+  group: keep-warm
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping /health (wakes the service if it was asleep)
+        run: |
+          URL="https://clearpath-dtrg.onrender.com/health"
+          for i in 1 2 3 4; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 "$URL" || echo "000")
+            echo "attempt $i -> HTTP $code"
+            if [ "$code" = "200" ]; then
+              echo "Service is awake ✅"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "::warning::/health did not return 200 after 4 attempts (likely a slow cold start)"
