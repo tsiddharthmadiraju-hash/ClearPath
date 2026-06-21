@@ -20,7 +20,12 @@ let currentScreen = 'home';
 let lastAnalysis = null;
 let lastDocumentType = null;
 let lastHistoryMeta = null;
-let resultLang = 'English'; // the language the CURRENT result's content is in
+let resultLang = 'English'; // the language the CURRENTLY DISPLAYED result is in
+// The untranslated source result + its language. We always translate FROM this
+// (never from an already-translated copy) so quality never degrades, and so
+// switching back to the original language is instant.
+let lastOriginalAnalysis = null;
+let lastOriginalLang = 'English';
 let processingTimers = [];
 const loadedFonts = new Set();
 
@@ -70,24 +75,48 @@ function setLanguage(code, persist) {
   applyI18n();
   // When viewing a result, re-translate its CONTENT into the new language too.
   if (currentScreen === 'results') translateCurrent();
+  // On the history list, re-render so labels localize and cards translate.
+  else if (currentScreen === 'history') renderHistory();
 }
 
-/** Re-translate the currently displayed result into the active language. */
+/** Show the displayed result in the active language (translating if needed). */
 async function translateCurrent() {
   const target = (BYCODE[lang] || BYCODE.en).english;
-  if (!lastAnalysis || target === resultLang) return;
+  const source = lastOriginalAnalysis;
+  if (!source) return;
+  if (target === resultLang) return; // already showing this language
   const meta = lastHistoryMeta;
+
+  // Back to the original language → show the untranslated source, no network.
+  if (target === lastOriginalLang) {
+    resultLang = target;
+    renderResults(source, meta);
+    return;
+  }
+
+  // Reuse a cached translation (history items remember each language).
+  if (meta && meta.id && window.CP_History) {
+    const it = window.CP_History.getHistoryItem(meta.id);
+    if (it && it.translations && it.translations[target]) {
+      resultLang = target;
+      renderResults(it.translations[target], meta);
+      return;
+    }
+  }
+
   startProcessing();
   try {
     const res = await fetch('/translate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ analysis: lastAnalysis, language: target }),
+      // Always translate FROM the original so we never translate a translation.
+      body: JSON.stringify({ analysis: source, language: target }),
     });
     const data = await res.json();
     clearProcessing();
     if (res.ok) {
       resultLang = target;
+      if (meta && meta.id && window.CP_History) window.CP_History.setTranslation(meta.id, target, data);
       renderResults(data, meta);
     } else {
       show('results'); // chrome already re-labeled; keep existing content
@@ -231,6 +260,8 @@ async function analyze(payload) {
     clearProcessing();
     if (!res.ok) return showError(data.message);
     resultLang = payload.language || 'English';
+    lastOriginalAnalysis = data;
+    lastOriginalLang = resultLang;
     renderResults(data);
     // Save real analyses to local history (never demo chips, never the document).
     if (!payload.demoType && window.CP_History) {
@@ -518,6 +549,45 @@ function confDotClass(c) { return c === 'high' ? 'conf-dot--high' : c === 'mediu
 function histConfLabel(c) { return c === 'high' ? t('confident') : c === 'medium' ? t('review_recommended') : t('verify_expert'); }
 function inputTypeLabel(it) { return it === 'camera' ? t('take_photo') : it === 'upload' ? t('upload_doc') : t('paste_text'); }
 
+/** A history card's type + preview in the active language (cached if available). */
+function histDisplay(it, target) {
+  let src = it.full_result;
+  if (target !== (it.language || 'English') && it.translations && it.translations[target]) {
+    src = it.translations[target];
+  }
+  const type = (src && src.document_type) || it.document_type;
+  const ex = String((src && src.plain_explanation) || it.plain_explanation || '');
+  return { type, preview: ex.length > 120 ? ex.slice(0, 120) + '…' : ex };
+}
+
+// Translate one stored history item into `target` once, cache it, and refresh the
+// list. Guarded + cached so a language switch costs at most one call per item.
+const _histTranslating = {};
+async function translateHistoryItem(it, target) {
+  if (!it || target === (it.language || 'English')) return;
+  if (it.translations && it.translations[target]) return;
+  if (!navigator.onLine || !window.CP_History) return;
+  const key = it.id + '|' + target;
+  if (_histTranslating[key]) return;
+  _histTranslating[key] = true;
+  try {
+    const res = await fetch('/translate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ analysis: it.full_result, language: target }),
+    });
+    const data = await res.json();
+    if (res.ok) {
+      window.CP_History.setTranslation(it.id, target, data);
+      if (currentScreen === 'history' && (BYCODE[lang] || BYCODE.en).english === target) renderHistory();
+    }
+  } catch {
+    /* leave the original text in place */
+  } finally {
+    delete _histTranslating[key];
+  }
+}
+
 function renderHistory() {
   const root = el('history-content');
   if (!root) return;
@@ -532,23 +602,25 @@ function renderHistory() {
       </div>`;
     return;
   }
+  const target = (BYCODE[lang] || BYCODE.en).english;
   const cards = items
-    .map(
-      (it) => `
+    .map((it) => {
+      const disp = histDisplay(it, target);
+      return `
       <div class="history-card" data-history="${it.id}">
         <button class="history-card__swipebtn" data-history-del="${it.id}" aria-label="${esc(t('delete'))}">⋯</button>
         <div class="history-card__top">
-          <span class="history-card__type">${esc(it.document_type)}</span>
+          <span class="history-card__type">${esc(disp.type)}</span>
           <span class="history-card__date">${esc(it.date_analyzed)}</span>
         </div>
-        <p class="history-card__preview">${esc(it.plain_explanation)}</p>
+        <p class="history-card__preview">${esc(disp.preview)}</p>
         <div class="history-card__bottom">
           <span class="history-conf"><span class="conf-dot ${confDotClass(it.confidence)}"></span>${esc(histConfLabel(it.confidence))}</span>
-          <span class="history-card__meta"><span>${esc(it.language)}</span><span>${esc(inputTypeLabel(it.input_type))}</span></span>
+          <span class="history-card__meta"><span>${esc(inputTypeLabel(it.input_type))}</span></span>
         </div>
         <button class="history-del" data-history-confirmdel="${it.id}">${esc(t('delete'))}</button>
-      </div>`
-    )
+      </div>`;
+    })
     .join('');
   root.innerHTML = `
     <div class="history-head">
@@ -557,13 +629,33 @@ function renderHistory() {
     </div>
     <p class="history-sub"><span aria-hidden="true">🔒︎</span>${esc(t('history_stored_local'))}</p>
     ${cards}`;
+  // Localize cards not yet available in the active language (cached afterwards).
+  items.forEach((it) => translateHistoryItem(it, target));
 }
 
 function openHistoryItem(id) {
   const item = window.CP_History && window.CP_History.getHistoryItem(id);
   if (!item) return;
-  resultLang = item.language || 'English';
-  renderResults(item.full_result, { id: item.id, date_analyzed: item.date_analyzed, checkedSteps: item.checkedSteps || {} });
+  lastOriginalAnalysis = item.full_result;
+  lastOriginalLang = item.language || 'English';
+  const meta = { id: item.id, date_analyzed: item.date_analyzed, checkedSteps: item.checkedSteps || {} };
+  const target = (BYCODE[lang] || BYCODE.en).english;
+  // Already have this language (original or cached translation)? Show it directly.
+  const cached =
+    target === lastOriginalLang
+      ? item.full_result
+      : item.translations && item.translations[target]
+        ? item.translations[target]
+        : null;
+  if (cached) {
+    resultLang = target;
+    renderResults(cached, meta);
+    return;
+  }
+  // Otherwise show the original immediately, then translate into the app language.
+  resultLang = lastOriginalLang;
+  renderResults(item.full_result, meta);
+  translateCurrent();
 }
 function toggleHistoryDelete(id) {
   const card = document.querySelector('.history-card[data-history="' + id + '"]');

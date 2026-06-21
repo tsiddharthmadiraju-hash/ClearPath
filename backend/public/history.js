@@ -76,9 +76,21 @@
     persist(items);
   }
 
+  // Cache a translated copy of an item's result, keyed by language display name,
+  // so re-viewing it in that language later is instant and free.
+  function setTranslation(id, langName, result) {
+    if (!id || !langName || !result) return;
+    const items = load();
+    const item = items.find((x) => x.id === id);
+    if (!item) return;
+    item.translations = item.translations || {};
+    item.translations[langName] = result;
+    persist(items);
+  }
+
   function count() { return load().length; }
 
   window.CP_History = {
-    saveAnalysis, getHistory, getHistoryItem, deleteHistoryItem, clearAllHistory, setChecked, count,
+    saveAnalysis, getHistory, getHistoryItem, deleteHistoryItem, clearAllHistory, setChecked, setTranslation, count,
   };
 })();
